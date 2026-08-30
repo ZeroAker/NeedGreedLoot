@@ -1,57 +1,177 @@
-NeedGreedLoot 使用手冊
-這份手冊整理自 Core.lua、ScannerPanel.lua 和 ManualPanel.lua。
+English Version
+NeedGreedLoot
+NeedGreedLoot is a World of Warcraft loot distribution helper for raid and dungeon groups. It helps track Need/Greed rolls, scan available items in the bag, announce roll windows, and record loot history for later review.
 
-1. 這個插件是什麼
-NeedGreedLoot 是一個團隊裝備分配輔助插件，主要功能包括：
+Core logic and UI are implemented in Core.lua, ScannerPanel.lua, ManualPanel.lua, and MainUI.lua.
 
-掃描背包中可開骰的裝備
-發起需求/貪婪/需求優先開骰
-自動記錄每位玩家的 roll 點數
-判定勝出者並記錄到歷史
-保留個人需求狀態與貪婪次數
-可手動補錄或修正記錄
-2. 開啟與介面
-2.1 開啟介面
-輸入：
-
-/ngl ui
-即可開啟插件主面板。
-
-2.2 主要面板
-介面中可看到：
-
-掃描與發起擲骰
-手動輸入/修改紀錄
-其他設定與 Profile 管理
-3. 指令列表
-以下為核心指令：
-
+Features
+Scan the bag for lootable items
+Start Need / Greed / Need-Priority roll sessions
+Parse player roll results automatically
+Accept only valid roll values within 1–100
+Record player Need status and Greed counts
+Save loot history and winners
+Support multiple profiles
+Manual entry and edit for missing or incorrect records
+Installation
+Download the addon folder
+Place the full NeedGreedLoot folder into your WoW AddOns directory
+Reload the interface
+Run /ngl ui to open the panel
+Commands
 /ngl
-啟動需求優先開骰（尚有未使用需求者為需求，已消耗需求者為貪婪）
+Start a Need-Priority roll
 
 /ngln
-需求擲骰（只允許未消耗需求的玩家參與）
+Start a Need-only roll
 
 /nglg
-貪婪擲骰（所有人都可參與，且全部算貪婪）
+Start a Greed-only roll
 
-/ngl [秒數]
-以指定秒數對懸停物品開骰
+/ngl [seconds]
+Start a roll on the hovered item for the specified duration
 
-/ngl [裝備連結] [秒數]
-對指定物品直接開骰
+/ngl [item link] [seconds]
+Start a roll on a specific item
 
 /ngl help
-顯示說明列表
+Show the command list
 
 /ngl stop
-提前結束並立即結算
+End the current roll immediately and resolve it
 
 /ngl abort
-中止本次開骰，不結算，也不記錄
+Cancel the current roll without recording results
+
+/ngl timer [seconds]
+Set the default countdown duration
+
+/ngl profile [name]
+Switch to a profile
+
+/ngl profile new [name]
+Create a new profile
+
+/ngl default
+Switch back to the default profile
+
+/ngl list
+View current Need status, Greed counts, and award history
+
+/ngl reset
+Reset current profile data
+
+Roll Modes
+Need-Priority
+Players who have not spent their Need roll are prioritized
+Players who already used Need are treated as Greed
+Need Roll
+Only players with remaining Need eligibility can participate
+Used Need players are ignored
+Greed Roll
+Everyone may participate
+No Need is spent
+Greed counts are tracked
+Roll Validation
+The addon parses roll outputs and accepts only rolls whose range is explicitly 1–100.
+
+Valid example:
+
+Ancient One rolls 18 (1-100)
+Invalid examples:
+
+Ancient One rolls 18 (1-90)
+Ancient One rolls 18 (0-100)
+Ancient One rolls 18 (5-100)
+Only values matching the exact 1–100 range are accepted and counted.
+
+Scan and Roll Flow
+Click “Scan Bag”
+Pick the target item
+Choose:
+Need Priority
+Need Roll
+Greed Roll
+The addon announces the roll in raid chat
+Players use /roll
+The addon parses the result
+The winner is announced and recorded
+Profile Management
+Profiles allow you to separate data for different groups, characters, or raid contexts.
+
+Examples:
+
+/ngl profile new Mythic
+/ngl profile Mythic
+/ngl profile delete Mythic
+/ngl default
+Manual Record Editing
+The manual panel allows you to:
+
+Enter an item link
+Input player name
+Enter roll value
+Choose Need or Greed
+Mark winner manually
+This is useful when:
+
+automatic parsing fails
+data needs correction
+a record must be added manually
+Notes
+Only party/raid leaders or assistants can start a roll
+Users must be in a group to use the addon’s roll functions
+Roll parsing depends on the expected WoW system output format
+Only valid 1–100 roll ranges are counted
+
+
+中文版本
+NeedGreedLoot
+NeedGreedLoot 是一個用於團隊裝備分配的 WoW 插件，適合在 raid / dungeon / 活動中快速處理需求、貪婪與 roll 結算。它會掃描背包中的可分配物品，支援開骰、結算、歷史紀錄、Profile 管理與手動補錄。
+
+相關主要實作位於 Core.lua、ScannerPanel.lua、ManualPanel.lua 與 MainUI.lua。
+
+功能概覽
+掃描背包中可供分配的裝備
+支援需求優先 / 需求擲骰 / 貪婪擲骰
+自動解析玩家 roll 結果
+只接受括號範圍為 1–100 的有效 roll
+記錄每位玩家的需求狀態與貪婪次數
+保存每次分配歷史
+支援多個 Profile 分開管理
+提供手動修正與補錄功能
+安裝方式
+下載插件資料夾
+將整個 NeedGreedLoot 資料夾放入 WoW 的 AddOns 目錄
+重新載入介面
+輸入 /ngl ui 開啟面板
+基本指令
+/ngl
+啟動需求優先開骰
+
+/ngln
+啟動需求擲骰
+
+/nglg
+啟動貪婪擲骰
+
+/ngl [秒數]
+以指定秒數開啟當前懸停物品的擲骰
+
+/ngl [裝備連結] [秒數]
+直接對指定物品開骰
+
+/ngl help
+顯示指令說明
+
+/ngl stop
+提前結束當前開骰並結算
+
+/ngl abort
+中止當前開骰，不結算、不記錄
 
 /ngl timer [秒數]
-設定全域預設倒數時間
+設定全域預設倒數秒數
 
 /ngl profile [名稱]
 切換 Profile
@@ -59,113 +179,68 @@ NeedGreedLoot 是一個團隊裝備分配輔助插件，主要功能包括：
 /ngl profile new [名稱]
 建立新 Profile
 
-/ngl profile delete [名稱]
-刪除 Profile
-
 /ngl default
 切回 default Profile
 
 /ngl list
-查看當前資料夾中的玩家需求狀態、貪婪次數與歷史
+查看需求狀態、貪婪次數與歷史
 
 /ngl reset
-重置當前 Profile 的所有玩家記錄
+重置當前 Profile 的資料
 
-4. 開骰流程
-4.1 從掃描面板開骰
-點擊「掃描背包」
-選擇要分配的物品
-按下：
+角色與分配模式
 需求優先
+未消耗需求的玩家優先
+已消耗需求者視為貪婪
+若仍有需求玩家存在，需求玩家勝出
 需求擲骰
+只允許尚未消耗需求的玩家參與
+已消耗需求玩家的 roll 無效
 貪婪擲骰
-系統會發出團隊警告並開始倒數
-4.2 從滑鼠懸停開骰
-把滑鼠放在背包或裝備欄物品上
-輸入：
-/ngl
-/ngln
-/nglg
-系統會直接以當前懸停物品開始開骰
-5. 玩家如何 roll
-玩家需使用遊戲原生指令：
+所有人都可參與
+全部視為貪婪
+會記錄貪婪次數
+Roll 規則
+插件會解析玩家的 /roll 結果，並要求 roll 的範圍必須是 1–100。
 
-/roll
-或直接輸入系統顯示的 roll 格式，插件會解析：
+接受格式範例：
 
 古萊哈姆擲出18（1-100）
-只有符合括號內範圍為 1–100 的 roll 會被接受。
-例如：
+不接受的範例：
 
-可接受：18（1-100）
-不接受：18（1-90）
-不接受：18（0-100）
-6. 需求優先與貪婪規則
-需求優先
-若有玩家仍未消耗需求，則需求優先
-已消耗需求者視為貪婪
-只有未消耗需求者才有資格在需求模式中競爭
-需求擲骰
-只允許未消耗需求的玩家參與
-已消耗需求者的 roll 會被視為無效
-貪婪擲骰
-所有人都能參與
-不會消耗需求
-會記錄貪婪次數
-7. Profile 管理
-Profile 用於分開記錄不同團隊或不同角色的需求狀態。
+古萊哈姆擲出18（1-90）
+古萊哈姆擲出18（0-100）
+古萊哈姆擲出18（5-100）
+只有括號內明確為 1–100 的 roll 才會被記錄與計入結算。
 
-建立 Profile
+扫描與分配流程
+點擊「掃描背包」
+選擇目標物品
+按下「需求優先」「需求擲骰」或「貪婪擲骰」
+系統發布團隊警告並開始倒數
+玩家使用 /roll
+插件解析結果並在結束時顯示勝出者
+Profile 管理
+插件支援多個 Profile，適合區分不同團隊、不同角色或不同活動。
+
+常用操作：
+
 /ngl profile new 25人團
-切換 Profile
 /ngl profile 25人團
-刪除 Profile
 /ngl profile delete 25人團
-接著輸入 /ngl yes 確認
-回到預設
 /ngl default
-8. 手動輸入與修正紀錄
+手動修正
 在手動紀錄面板中，可：
 
-輸入物品連結
+手動輸入物品連結
 輸入玩家名稱
-填入 roll 點數
-選擇 Need / Greed
+輸入 roll 點數
+指定 Need / Greed
 設定獲勝者
-這適合在：
+這適合補錄遺失紀錄或修正結算結果。
 
-自動抓取失敗
-需要補記錄
-需要修正歸檔歷史
-9. 掃描規則
-根據目前掃描邏輯，系統會優先檢查：
-
-武器
-裝備
-飾品 / 其他可裝備類別
-特定 Miscellaneous / Tier Token 類型項目
-尚在可交易窗口內的物品
-同時會排除：
-
-Warbound
-不符合開骰類型
-不在可交易範圍內的物品
-10. 常見問題
-Q: 為什麼某些 roll 沒被記錄？
-因為插件會要求 roll 必須符合括號範圍是 1–100，其他範圍會被忽略。
-
-Q: 為什麼有些裝備不會出現在掃描列表？
-可能是因為：
-
-不是可裝備/可分配類型
-已經超出可交易窗口
-是 Warbound
-不是可掃描的項目
-Q: 我想提前結算怎麼做？
-輸入：
-
-/ngl stop
-Q: 我想中止這次開骰怎麼做？
-輸入：
-
-/ngl abort
+注意事項
+只有隊長或助理可發起開骰
+若使用者不在團隊內，插件會拒絕執行
+需要正確使用 WoW 原生 roll 格式，插件才能解析
+只有符合 1–100 範圍的 roll 才會計入分配

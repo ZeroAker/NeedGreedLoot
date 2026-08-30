@@ -1,0 +1,15 @@
+## Interface: 120100, 120007, 50504, 38001, 20506, 11509
+## Title: NeedGreedLoot
+## Notes: Need/Greed Loot Distribution Addon
+## Author: 4nzon
+## Version: 2.3
+## SavedVariables: NGL_Profiles, NGL_CurrentProfile, NGL_DebugMode, NGL_DefaultTimer, NGL_MinimapAngle
+
+Core.lua
+UI\MainUI.lua
+UI\Panels\ScannerPanel.lua
+UI\Panels\LootLogPanel.lua
+UI\Panels\ProfilePanel.lua
+UI\Panels\SettingsPanel.lua
+UI\Panels\ManualPanel.lua
+Components\MinimapButton.lua

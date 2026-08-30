@@ -64,6 +64,7 @@ local assignPlayer = nil
 local assignPlayerMenu = CreateFrame("Frame", "NGLAssignPlayerMenu", detail, "UIDropDownMenuTemplate")
 UIDropDownMenu_SetWidth(assignPlayerMenu, 150)
 UIDropDownMenu_SetText(assignPlayerMenu, "選擇團隊玩家")
+assignPlayerMenu:Hide()
 
 local function GetRaidPlayerNames()
     local names = {}
@@ -88,13 +89,19 @@ UIDropDownMenu_Initialize(assignPlayerMenu, function(self)
     end
 end)
 
-local reassignButton = NGL.CreateButton(detail, "重新分配", 125, 0, 0, function()
-    NGL.ReassignSelectedLoot(selectedUUID, assignPlayer)
+local assignGreedButton = NGL.CreateButton(detail, "分配貪婪", 100, 0, 0, function()
+    NGL.ReassignSelectedLoot(selectedUUID, assignPlayer, "Greed")
+end)
+assignGreedButton:ClearAllPoints()
+assignGreedButton:SetPoint("TOPRIGHT", detail, "TOPRIGHT", -110, -4)
+
+local reassignButton = NGL.CreateButton(detail, "分配需求", 100, 0, 0, function()
+    NGL.ReassignSelectedLoot(selectedUUID, assignPlayer, "Need")
 end)
 reassignButton:ClearAllPoints()
 reassignButton:SetPoint("TOPRIGHT", detail, "TOPRIGHT", 0, -4)
 assignPlayerMenu:ClearAllPoints()
-assignPlayerMenu:SetPoint("TOPRIGHT", detail, "TOPRIGHT", -105, -3)
+assignPlayerMenu:SetPoint("TOPRIGHT", detail, "TOPRIGHT", -8, -38)
  
 local rerollLabel = detail:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 rerollLabel:SetPoint("BOTTOMLEFT", detail, "BOTTOMLEFT", 0, 8)
@@ -126,6 +133,7 @@ function NGL.ClearLootDetails()
     if detail.rows then NGL.ClearRows(detail.rows) end
     if detail.rollContent then detail.rollContent:SetHeight(1) end
     if assignPlayerMenu then assignPlayerMenu:Hide() end
+    if assignGreedButton then assignGreedButton:Hide() end
     if reassignButton then reassignButton:Hide() end
     if rerollLabel then rerollLabel:Hide() end
     if rerollAllButton then rerollAllButton:Hide() end
@@ -176,6 +184,7 @@ function NGL.SetSelectedLoot(uuid)
     detail.uuid:SetText("UUID: " .. (loot.uuid or ""))
     detail.status:SetText(loot.winnerName and ("贏家: " .. loot.winnerName .. " (" .. (loot.consumableType or "") .. ")") or "狀態: 尚未指定勝者")
     if assignPlayerMenu then assignPlayerMenu:Show() end
+    if assignGreedButton then assignGreedButton:Show() end
     if reassignButton then reassignButton:Show() end
     if rerollLabel then rerollLabel:Show() end
     if rerollAllButton then rerollAllButton:Show() end
@@ -315,7 +324,7 @@ function NGL.RerollLoot(uuid, mode)
     if NGL.DeleteLoot(uuid) then StartNGLRoll(itemLink, nil, mode) end
 end
 
-function NGL.ReassignSelectedLoot(targetUUID, targetPlayer)
+function NGL.ReassignSelectedLoot(targetUUID, targetPlayer, assignType)
     local profile = NGL.GetCurrentProfileData()
     local loot = targetUUID and profile.LootList[targetUUID]
     if not loot or not targetPlayer then return end
@@ -326,7 +335,13 @@ function NGL.ReassignSelectedLoot(targetUUID, targetPlayer)
 
     local oldWinner = loot.winnerName
     local newType = "Need"
-    if targetPlayer ~= oldWinner and profile.UsedNeedList[targetPlayer] then newType = "Greed" end
+    if assignType and string.lower(assignType) == "greed" then
+        newType = "Greed"
+    elseif assignType and string.lower(assignType) == "need" then
+        newType = "Need"
+    elseif targetPlayer ~= oldWinner and profile.UsedNeedList[targetPlayer] then
+        newType = "Greed"
+    end
 
     if oldWinner and oldWinner ~= targetPlayer then
         for _, roll in ipairs(loot.rolls or {}) do
@@ -355,29 +370,10 @@ function NGL.ReassignSelectedLoot(targetUUID, targetPlayer)
 
     if not foundNewWinner then
         table.insert(loot.rolls, {
-            playerName = cleanName,
+            playerName = targetPlayer,
             serverName = serverName,
             classToken = classToken,
             classColor = classColor,
-            roll = 999,
-            rollType = newType,
-            timestamp = time()
-        })
-    end
-
-    local foundNewWinner = false
-    for _, roll in ipairs(loot.rolls or {}) do
-        if roll.playerName == targetPlayer then
-            roll.roll = 999
-            roll.rollType = newType
-            foundNewWinner = true
-            break
-        end
-    end
-    if not foundNewWinner then
-        table.insert(loot.rolls, {
-            playerName = targetPlayer,
-            serverName = GetRealmName(),
             roll = 999,
             rollType = newType,
             timestamp = time()
@@ -388,7 +384,7 @@ function NGL.ReassignSelectedLoot(targetUUID, targetPlayer)
     loot.consumableType = newType
     loot.winnerRoll = 999
     NGL.RebuildPlayerRecords(profile)
-    SendChatMessage("【需求優先】" .. targetPlayer .. " 被分配獲得 " .. (loot.itemLink or "裝備") .. " (" .. newType .. ")!", "RAID_WARNING")
+    SendChatMessage("【" .. (newType == "Need" and "需求" or "貪婪") .. "】" .. targetPlayer .. " 被分配獲得 " .. (loot.itemLink or "裝備") .. " (" .. newType .. ")!", "RAID_WARNING")
     NGL.RefreshLootList()
     NGL.SetSelectedLoot(targetUUID)
 end

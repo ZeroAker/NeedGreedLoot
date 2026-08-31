@@ -5,12 +5,41 @@ settingsPanel:SetPoint("TOPLEFT", 12, -64)
 settingsPanel:SetPoint("BOTTOMRIGHT", -12, 12)
 NGL.panels[4] = settingsPanel
 
-NGL.CreateLabel(settingsPanel, "設定", 12, -10, "GameFontHighlightLarge")
-NGL.CreateLabel(settingsPanel, "全局計時器 (秒)", 24, -58)
+local titleLabel = NGL.CreateLabel(settingsPanel, NGL.L("settings.title"), 12, -10, "GameFontHighlightLarge")
+local timerLabel = NGL.CreateLabel(settingsPanel, NGL.L("settings.timer"), 24, -58)
+local languageLabel = NGL.CreateLabel(settingsPanel, NGL.L("settings.language"), 24, -128)
 
 local timerInput = NGL.CreateEditBox(settingsPanel, 100, 24, 160, -52, tostring(NGL_DefaultTimer))
 
-NGL.CreateButton(settingsPanel, "Apply", 70, 270, -52, function()
+local dropdown = CreateFrame("Frame", nil, settingsPanel, "UIDropDownMenuTemplate")
+dropdown:SetPoint("TOPLEFT", 160, -122)
+UIDropDownMenu_SetWidth(dropdown, 150)
+
+local function RefreshLocaleDropdown()
+    local options = {
+        { text = "English", value = "enUS" },
+        { text = "繁體中文", value = "zhTW" },
+    }
+
+    local function InitDropdown(_, level)
+        local info = UIDropDownMenu_CreateInfo()
+        for _, option in ipairs(options) do
+            info.text = option.text
+            info.value = option.value
+            info.checked = (NGL.GetLocale() == option.value)
+            info.func = function(self)
+                NGL.SetLocale(self.value)
+                UIDropDownMenu_SetSelectedValue(dropdown, NGL.GetLocale())
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end
+
+    UIDropDownMenu_Initialize(dropdown, InitDropdown)
+    UIDropDownMenu_SetSelectedValue(dropdown, NGL.GetLocale())
+end
+
+local applyButton = NGL.CreateButton(settingsPanel, NGL.L("settings.apply"), 70, 270, -52, function()
     local value = tonumber(timerInput:GetText())
     if value and value >= 5 then
         NGL_DefaultTimer = value
@@ -19,12 +48,8 @@ NGL.CreateButton(settingsPanel, "Apply", 70, 270, -52, function()
             NGL.scannerDurationInput:SetText(tostring(NGL_DefaultTimer))
         end
 
-        print("|cff00ff00[NGL]|r 全局計時器設爲 " .. value .. " 秒.")
+        print("|cff00ff00[NGL]|r " .. NGL.L("settings.timer.saved", { value = value }))
     end
-end)
-
-settingsPanel:SetScript("OnShow", function()
-    timerInput:SetText(tostring(NGL_DefaultTimer))
 end)
 
 local debugBtn = CreateFrame("Button", nil, settingsPanel, "UIPanelButtonTemplate")
@@ -32,16 +57,35 @@ debugBtn:SetSize(160, 26)
 debugBtn:SetPoint("TOPLEFT", 24, -92)
 
 local function UpdateDebugBtnText()
-    debugBtn:SetText("Debug 模式: " .. (NGL_DebugMode and "|cff00ff00開啓|r" or "|cffff0000關閉|r"))
+    if debugBtn then
+        local state = NGL_DebugMode and NGL.L("common.enabled") or NGL.L("common.disabled")
+        debugBtn:SetText(NGL.L("settings.debug", { state = state }))
+    end
+end
+
+NGL.UpdateDebugButtonText = UpdateDebugBtnText
+
+function NGL.RefreshSettingsPanel()
+    titleLabel:SetText(NGL.L("settings.title"))
+    timerLabel:SetText(NGL.L("settings.timer"))
+    languageLabel:SetText(NGL.L("settings.language"))
+    applyButton:SetText(NGL.L("settings.apply"))
+    RefreshLocaleDropdown()
+    UpdateDebugBtnText()
 end
 
 UpdateDebugBtnText()
 
+settingsPanel:SetScript("OnShow", function()
+    timerInput:SetText(tostring(NGL_DefaultTimer))
+    NGL.RefreshSettingsPanel()
+end)
+
 debugBtn:SetScript("OnClick", function()
-    NGL_DebugMode = not NGL_DebugMode
-    UpdateDebugBtnText()
+    NGL.SetDebugMode(not NGL_DebugMode)
     if NGL.scannerPanel and NGL.scannerPanel:IsShown() and NGL.RefreshScanner then
         NGL.RefreshScanner()
     end
-    print("|cff00ff00[NGL]|r Debug 模式 " .. (NGL_DebugMode and "開啓" or "關閉") .. ".")
+    local state = NGL_DebugMode and NGL.L("common.enabled") or NGL.L("common.disabled")
+    print("|cff00ff00[NGL]|r " .. NGL.L("settings.debug.toggle", { state = state }))
 end)

@@ -5,6 +5,7 @@ NGL_Profiles = NGL_Profiles or {}
 NGL_CurrentProfile = NGL_CurrentProfile or "default"
 if NGL_DebugMode == nil then NGL_DebugMode = false end
 NGL_DefaultTimer = NGL_DefaultTimer or 20
+NGL_Locale = NGL_Locale or NGL.GetClientLocale()
 
 -- Pending confirmation state for deleting a profile
 local pendingDeleteProfile = nil
@@ -44,6 +45,16 @@ end
 function NGL.DebugPrint(msg)
     if NGL_DebugMode then
         print("|cffff00ff[NGL Debug]|r " .. msg)
+    end
+end
+
+function NGL.SetDebugMode(enabled)
+    NGL_DebugMode = not not enabled
+    if NGL.UpdateDebugButtonText then
+        NGL.UpdateDebugButtonText()
+    end
+    if NGL.scannerPanel and NGL.scannerPanel:IsShown() and NGL.RefreshScanner then
+        NGL.RefreshScanner()
     end
 end
 
@@ -571,7 +582,7 @@ local function HandleNGLSlash(msg, mode)
             print("|cffff0000[NGL]|r 請輸入有效的秒數 (至少 5 秒)，例如：/ngl timer 30")
         end
     elseif cmd == "debug" then
-        NGL_DebugMode = not NGL_DebugMode
+        NGL.SetDebugMode(not NGL_DebugMode)
         local status = NGL_DebugMode and "|cff00ff00已開啟|r" or "|cffff0000已關閉|r"
         print("|cff00ff00[NGL]|r Debug 模式 " .. status)
     elseif cmd == "reset" then

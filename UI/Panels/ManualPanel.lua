@@ -5,23 +5,23 @@ manualPanel:SetPoint("TOPLEFT", 12, -64)
 manualPanel:SetPoint("BOTTOMRIGHT", -12, 12)
 NGL.panels[5] = manualPanel
 
-NGL.CreateLabel(manualPanel, "Manual Entry & Edit", 12, -10, "GameFontHighlightLarge")
-NGL.CreateLabel(manualPanel, "Edit selected Loot Log, or add new if unselected.", 24, -38, "GameFontNormalSmall")
+NGL.CreateLabel(manualPanel, NGL.L("manual.title"), 12, -10, "GameFontHighlightLarge")
+NGL.CreateLabel(manualPanel, NGL.L("manual.subtitle"), 24, -38, "GameFontNormalSmall")
 
 local itemInput = NGL.CreateEditBox(manualPanel, 520, 24, 24, -84)
-NGL.CreateLabel(manualPanel, "Item Link", 24, -74)
+NGL.CreateLabel(manualPanel, NGL.L("manual.item_link"), 24, -74)
 
 local playerInput = NGL.CreateEditBox(manualPanel, 220, 24, 24, -138)
-NGL.CreateLabel(manualPanel, "Player Name", 24, -128)
+NGL.CreateLabel(manualPanel, NGL.L("manual.player_name"), 24, -128)
 
 local rollInput = NGL.CreateEditBox(manualPanel, 100, 24, 260, -138)
-NGL.CreateLabel(manualPanel, "Roll Points", 260, -128)
+NGL.CreateLabel(manualPanel, NGL.L("manual.roll_points"), 260, -128)
 
 local typeInput = NGL.CreateEditBox(manualPanel, 120, 24, 380, -138, "Need")
-NGL.CreateLabel(manualPanel, "Type (Need/Greed)", 380, -128)
+NGL.CreateLabel(manualPanel, NGL.L("manual.type_need_greed"), 380, -128)
 
 local winnerInput = NGL.CreateEditBox(manualPanel, 220, 24, 24, -192)
-NGL.CreateLabel(manualPanel, "Winner Name (Optional)", 24, -182)
+NGL.CreateLabel(manualPanel, NGL.L("manual.winner_optional"), 24, -182)
 
 local function LoadSelectedIntoManual()
     local loot = NGL.selectedUUID and NGL.GetCurrentProfileData().LootList[NGL.selectedUUID]
@@ -36,9 +36,9 @@ local function LoadSelectedIntoManual()
     end
 end
 
-NGL.CreateButton(manualPanel, "Load Selected", 110, 260, -240, LoadSelectedIntoManual)
+NGL.CreateButton(manualPanel, NGL.L("manual.load_selected"), 110, 260, -240, LoadSelectedIntoManual)
 
-NGL.CreateButton(manualPanel, "Save Record", 120, 380, -240, function()
+NGL.CreateButton(manualPanel, NGL.L("manual.save_record"), 120, 380, -240, function()
     local profile = NGL.GetCurrentProfileData()
     local loot = NGL.selectedUUID and profile.LootList[NGL.selectedUUID]
     if not loot then

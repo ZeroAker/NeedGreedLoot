@@ -6,8 +6,8 @@ scannerPanel:SetPoint("BOTTOMRIGHT", -12, 12)
 NGL.panels[1] = scannerPanel
 NGL.scannerPanel = scannerPanel
 
-NGL.CreateLabel(scannerPanel, "掃描與發起擲骰", 12, -10, "GameFontHighlightLarge")
-NGL.CreateLabel(scannerPanel, "當前裝備", 24, -42, "GameFontHighlight")
+NGL.CreateLabel(scannerPanel, NGL.L("scanner.title"), 12, -10, "GameFontHighlightLarge")
+NGL.CreateLabel(scannerPanel, NGL.L("scanner.current_item"), 24, -42, "GameFontHighlight")
 
 local currentItemIcon = scannerPanel:CreateTexture(nil, "ARTWORK")
 currentItemIcon:SetSize(42, 42)
@@ -26,7 +26,7 @@ currentItemButton:SetScript("OnEnter", function(self)
 end)
 currentItemButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
-local currentItemName = NGL.CreateLabel(scannerPanel, "尚未選擇裝備", 78, -70)
+local currentItemName = NGL.CreateLabel(scannerPanel, NGL.L("scanner.no_item_selected"), 78, -70)
 currentItemName:SetWidth(310)
 currentItemName:SetWordWrap(false)
 
@@ -36,14 +36,14 @@ currentItemUUID:SetWordWrap(false)
 
 NGL.scannerDurationInput = NGL.CreateEditBox(scannerPanel, 70, 24, 540, -62, tostring(NGL_DefaultTimer))
 local durationInput = NGL.scannerDurationInput
-NGL.CreateLabel(scannerPanel, "秒", 615, -68)
+NGL.CreateLabel(scannerPanel, NGL.L("scanner.seconds"), 615, -68)
 
 local scanDivider = scannerPanel:CreateTexture(nil, "ARTWORK")
 scanDivider:SetColorTexture(0.5, 0.5, 0.5, 0.8)
 scanDivider:SetPoint("TOPLEFT", 24, -122)
 scanDivider:SetSize(820, 1)
 
-NGL.CreateLabel(scannerPanel, "背包裝備", 24, -142, "GameFontHighlight")
+NGL.CreateLabel(scannerPanel, NGL.L("scanner.bag_items"), 24, -142, "GameFontHighlight")
 
 local scanScroll = CreateFrame("ScrollFrame", nil, scannerPanel, "UIPanelScrollFrameTemplate")
 scanScroll:SetPoint("TOPLEFT", 24, -166)
@@ -148,7 +148,7 @@ function NGL.RefreshScanner()
     NGL.selectedScanItem = nil
     GameTooltip:Hide()
     currentItemIcon:SetTexture(134400)
-    currentItemName:SetText("尚未選擇裝備")
+    currentItemName:SetText(NGL.L("scanner.no_item_selected"))
     currentItemUUID:SetText("")
     for _, slotButton in ipairs(scanSlots) do
         slotButton:UnlockHighlight()
@@ -197,7 +197,7 @@ function NGL.RefreshScanner()
                     NGL.selectedScanItem = scanItem
                     currentItemIcon:SetTexture(itemInfo and itemInfo.iconFileID or 134400)
                     currentItemName:SetText(itemLink)
-                    currentItemUUID:SetText("已選取背包 " .. bag .. ", 格位 " .. slot)
+                    currentItemUUID:SetText(NGL.L("scanner.selected_slot", { bag = bag, slot = slot }))
                     for _, otherButton in ipairs(scanSlots) do
                         if otherButton.selectedBorder then otherButton.selectedBorder:Hide() end
                     end
@@ -216,20 +216,20 @@ function NGL.RefreshScanner()
     scanList:SetHeight(math.max(1, math.ceil(index / 10) * 64))
 end
 
-NGL.CreateButton(scannerPanel, "掃描背包", 90, 24, -112, NGL.RefreshScanner)
-NGL.CreateButton(scannerPanel, "需求優先", 90, 175, -112, function()
+NGL.CreateButton(scannerPanel, NGL.L("scanner.scan_bag"), 90, 24, -112, NGL.RefreshScanner)
+NGL.CreateButton(scannerPanel, NGL.L("scanner.need_priority"), 90, 175, -112, function()
     if NGL.selectedScanItem then StartNGLRoll(NGL.selectedScanItem.itemLink, durationInput:GetText(), "ALL") end
 end)
-NGL.CreateButton(scannerPanel, "需求擲骰", 90, 270, -112, function()
+NGL.CreateButton(scannerPanel, NGL.L("scanner.need_roll"), 90, 270, -112, function()
     if NGL.selectedScanItem then StartNGLRoll(NGL.selectedScanItem.itemLink, durationInput:GetText(), "NEED") end
 end)
-NGL.CreateButton(scannerPanel, "貪婪擲骰", 90, 365, -112, function()
+NGL.CreateButton(scannerPanel, NGL.L("scanner.greed_roll"), 90, 365, -112, function()
     if NGL.selectedScanItem then StartNGLRoll(NGL.selectedScanItem.itemLink, durationInput:GetText(), "GREED") end
 end)
-NGL.CreateButton(scannerPanel, "提前結束", 90, 460, -112, function()
+NGL.CreateButton(scannerPanel, NGL.L("scanner.end_early"), 90, 460, -112, function()
     SlashCmdList["NGL"]("stop")
 end)
-NGL.CreateButton(scannerPanel, "終止", 90, 555, -112, function()
+NGL.CreateButton(scannerPanel, NGL.L("scanner.abort"), 90, 555, -112, function()
     SlashCmdList["NGL"]("abort")
 end)
 

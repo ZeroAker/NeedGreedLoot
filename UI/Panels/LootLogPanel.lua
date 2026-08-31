@@ -11,9 +11,9 @@ local activeFilter = "ALL"
 local selectedUUID = nil
 
 StaticPopupDialogs["NGL_CONFIRM_DELETE_LOOT"] = {
-    text = "確定要刪除這筆 Loot Log 嗎？此操作無法復原。",
-    button1 = "刪除",
-    button2 = "取消",
+    text = NGL.L("loot.delete_confirm"),
+    button1 = NGL.L("loot.delete"),
+    button2 = NGL.L("loot.cancel"),
     OnAccept = function(_, uuid)
         NGL.DeleteLoot(uuid)
     end,
@@ -23,13 +23,13 @@ StaticPopupDialogs["NGL_CONFIRM_DELETE_LOOT"] = {
     preferredIndex = 3
 }
 
-NGL.CreateLabel(lootPanel, "Loot Log", 12, -10, "GameFontHighlightLarge")
+NGL.CreateLabel(lootPanel, NGL.L("loot.title"), 12, -10, "GameFontHighlightLarge")
 lootPanel.search = NGL.CreateEditBox(lootPanel, 240, 24, 12, -42)
 lootPanel.search:SetScript("OnTextChanged", function() NGL.RefreshLootList() end)
-NGL.CreateLabel(lootPanel, "搜尋裝備或 UUID", 258, -48)
-NGL.CreateButton(lootPanel, "全部", 55, 405, -42, function() activeFilter = "ALL"; NGL.RefreshLootList() end)
-NGL.CreateButton(lootPanel, "未分配", 65, 465, -42, function() activeFilter = "OPEN"; NGL.RefreshLootList() end)
-NGL.CreateButton(lootPanel, "已分配", 65, 535, -42, function() activeFilter = "WON"; NGL.RefreshLootList() end)
+NGL.CreateLabel(lootPanel, NGL.L("loot.search"), 258, -48)
+NGL.CreateButton(lootPanel, NGL.L("loot.all"), 55, 405, -42, function() activeFilter = "ALL"; NGL.RefreshLootList() end)
+NGL.CreateButton(lootPanel, NGL.L("loot.unassigned"), 65, 465, -42, function() activeFilter = "OPEN"; NGL.RefreshLootList() end)
+NGL.CreateButton(lootPanel, NGL.L("loot.assigned"), 65, 535, -42, function() activeFilter = "WON"; NGL.RefreshLootList() end)
 
 local listScroll = CreateFrame("ScrollFrame", nil, lootPanel, "UIPanelScrollFrameTemplate")
 listScroll:SetPoint("TOPLEFT", 12, -78)
@@ -43,14 +43,14 @@ local detail = CreateFrame("Frame", nil, lootPanel)
 detail:SetPoint("TOPLEFT", 365, -78)
 detail:SetPoint("BOTTOMRIGHT", -8, 12)
 NGL.panels.lootDetails = detail
-detail.title = NGL.CreateLabel(detail, "選擇一件裝備查看明細", 16, -8, "GameFontHighlightLarge")
+detail.title = NGL.CreateLabel(detail, NGL.L("loot.select_detail"), 16, -8, "GameFontHighlightLarge")
 detail.uuid = NGL.CreateLabel(detail, "", 16, -38, "GameFontDisableSmall")
 detail.status = NGL.CreateLabel(detail, "", 16, -60)
-NGL.CreateLabel(detail, "玩家", 16, -84, "GameFontHighlight")
-NGL.CreateLabel(detail, "伺服器", 140, -84, "GameFontHighlight")
-NGL.CreateLabel(detail, "職業", 220, -84, "GameFontHighlight")
-NGL.CreateLabel(detail, "類型", 340, -84, "GameFontHighlight")
-NGL.CreateLabel(detail, "點數", 420, -84, "GameFontHighlight")
+NGL.CreateLabel(detail, NGL.L("loot.player"), 16, -84, "GameFontHighlight")
+NGL.CreateLabel(detail, NGL.L("loot.server"), 140, -84, "GameFontHighlight")
+NGL.CreateLabel(detail, NGL.L("loot.class"), 220, -84, "GameFontHighlight")
+NGL.CreateLabel(detail, NGL.L("loot.type"), 340, -84, "GameFontHighlight")
+NGL.CreateLabel(detail, NGL.L("loot.points"), 420, -84, "GameFontHighlight")
 
 local rollScroll = CreateFrame("ScrollFrame", nil, detail, "UIPanelScrollFrameTemplate")
 rollScroll:SetPoint("TOPLEFT", 0, -102)
@@ -63,7 +63,7 @@ local assignPlayer = nil
 
 local assignPlayerMenu = CreateFrame("Frame", "NGLAssignPlayerMenu", detail, "UIDropDownMenuTemplate")
 UIDropDownMenu_SetWidth(assignPlayerMenu, 150)
-UIDropDownMenu_SetText(assignPlayerMenu, "選擇團隊玩家")
+UIDropDownMenu_SetText(assignPlayerMenu, NGL.L("loot.choose_player"))
 assignPlayerMenu:Hide()
 
 local function GetRaidPlayerNames()
@@ -89,13 +89,13 @@ UIDropDownMenu_Initialize(assignPlayerMenu, function(self)
     end
 end)
 
-local assignGreedButton = NGL.CreateButton(detail, "分配貪婪", 100, 0, 0, function()
+local assignGreedButton = NGL.CreateButton(detail, NGL.L("loot.assign_greed"), 100, 0, 0, function()
     NGL.ReassignSelectedLoot(selectedUUID, assignPlayer, "Greed")
 end)
 assignGreedButton:ClearAllPoints()
 assignGreedButton:SetPoint("TOPRIGHT", detail, "TOPRIGHT", -110, -4)
 
-local reassignButton = NGL.CreateButton(detail, "分配需求", 100, 0, 0, function()
+local reassignButton = NGL.CreateButton(detail, NGL.L("loot.assign_need"), 100, 0, 0, function()
     NGL.ReassignSelectedLoot(selectedUUID, assignPlayer, "Need")
 end)
 reassignButton:ClearAllPoints()
@@ -105,21 +105,21 @@ assignPlayerMenu:SetPoint("TOPRIGHT", detail, "TOPRIGHT", -8, -38)
  
 local rerollLabel = detail:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
 rerollLabel:SetPoint("BOTTOMLEFT", detail, "BOTTOMLEFT", 0, 8)
-rerollLabel:SetText("重擲: ")
+rerollLabel:SetText(NGL.L("loot.reroll"))
 
-local rerollAllButton = NGL.CreateButton(detail, "需求優先", 75, 0, 0, function()
+local rerollAllButton = NGL.CreateButton(detail, NGL.L("loot.reroll_all"), 75, 0, 0, function()
     if selectedUUID then NGL.RerollLoot(selectedUUID, "ALL") end
 end)
 rerollAllButton:ClearAllPoints()
 rerollAllButton:SetPoint("LEFT", rerollLabel, "RIGHT", 4, 0)
 
-local rerollNeedButton = NGL.CreateButton(detail, "需求擲骰", 75, 0, 0, function()
+local rerollNeedButton = NGL.CreateButton(detail, NGL.L("loot.reroll_need"), 75, 0, 0, function()
     if selectedUUID then NGL.RerollLoot(selectedUUID, "NEED") end
 end)
 rerollNeedButton:ClearAllPoints()
 rerollNeedButton:SetPoint("LEFT", rerollAllButton, "RIGHT", 4, 0)
 
-local rerollGreedButton = NGL.CreateButton(detail, "貪婪擲骰", 75, 0, 0, function()
+local rerollGreedButton = NGL.CreateButton(detail, NGL.L("loot.reroll_greed"), 75, 0, 0, function()
     if selectedUUID then NGL.RerollLoot(selectedUUID, "GREED") end
 end)
 rerollGreedButton:ClearAllPoints()
@@ -181,8 +181,8 @@ function NGL.SetSelectedLoot(uuid)
     if not loot then return end
 
     detail.title:SetText(loot.itemLink or "")
-    detail.uuid:SetText("UUID: " .. (loot.uuid or ""))
-    detail.status:SetText(loot.winnerName and ("贏家: " .. loot.winnerName .. " (" .. (loot.consumableType or "") .. ")") or "狀態: 尚未指定勝者")
+    detail.uuid:SetText(NGL.L("loot.uuid", { uuid = loot.uuid or "" }))
+    detail.status:SetText(loot.winnerName and NGL.L("loot.status_winner", { player = loot.winnerName, type = tostring(loot.consumableType or "") }) or NGL.L("loot.status_unassigned"))
     if assignPlayerMenu then assignPlayerMenu:Show() end
     if assignGreedButton then assignGreedButton:Show() end
     if reassignButton then reassignButton:Show() end
@@ -234,10 +234,10 @@ function NGL.SetSelectedLoot(uuid)
         local color = roll.classColor or { r = 1, g = 1, b = 1 }
         row.player:SetText(roll.playerName or "?")
         row.player:SetTextColor(color.r, color.g, color.b)
-        row.server:SetText(roll.serverName or "Unknown")
-        row.class:SetText(roll.classToken or "Unknown")
+        row.server:SetText(roll.serverName or NGL.L("common.unknown"))
+        row.class:SetText(roll.classToken or NGL.L("common.unknown"))
         row.class:SetTextColor(color.r, color.g, color.b)
-        row.type:SetText(roll.rollType == "Need" and "Need" or "Greed")
+        row.type:SetText(roll.rollType == "Need" and NGL.L("loot.need") or NGL.L("loot.greed"))
         row.roll:SetText(tostring(roll.roll or 0))
         row:SetPoint("TOPLEFT", 0, y)
         row:Show()
@@ -291,7 +291,7 @@ function NGL.RefreshLootList()
                 row.deleteButton:SetHighlightTexture("Interface\\Buttons\\UI-GroupLoot-Pass-Highlight")
                 row.deleteButton:SetScript("OnEnter", function(self)
                     GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
-                    GameTooltip:SetText("刪除 Loot Log")
+                    GameTooltip:SetText(NGL.L("loot.delete"))
                     GameTooltip:Show()
                 end)
                 row.deleteButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
@@ -299,8 +299,8 @@ function NGL.RefreshLootList()
             end
             row:SetPoint("TOPLEFT", 0, -(index - 1) * 42)
             row.icon:SetTexture(loot.icon or 134400)
-            row.name:SetText(loot.itemLink or "未知裝備")
-            row.uuid:SetText((loot.uuid or "") .. (loot.winnerName and "  [已分配]" or "  [未分配]"))
+            row.name:SetText(loot.itemLink or NGL.L("common.unknown"))
+            row.uuid:SetText((loot.uuid or "") .. (loot.winnerName and "  [" .. NGL.L("loot.assigned") .. "]" or "  [" .. NGL.L("loot.unassigned") .. "]"))
             row:SetScript("OnClick", function() NGL.SetSelectedLoot(uuid) end)
             row.deleteButton:SetScript("OnClick", function() StaticPopup_Show("NGL_CONFIRM_DELETE_LOOT", nil, nil, uuid) end)
             row:Show()
@@ -313,11 +313,11 @@ function NGL.RerollLoot(uuid, mode)
     local loot = NGL.GetCurrentProfileData().LootList[uuid]
     if not loot then return end
     if IsNGLRollActive and IsNGLRollActive() then
-        print("|cffff0000[NGL]|r 目前已有擲骰進行中，無法重新擲骰。")
+        print("|cffff0000[NGL]|r " .. NGL.L("core.roll.already_running"))
         return
     end
     if not IsInRaid() or not (UnitIsGroupLeader("player") or UnitIsGroupAssistant("player")) then
-        print("|cffff0000[NGL]|r 只有團隊隊長或團隊助手可以重新擲骰。")
+        print("|cffff0000[NGL]|r " .. NGL.L("core.permission.not_leader"))
         return
     end
     local itemLink = loot.itemLink
@@ -329,7 +329,7 @@ function NGL.ReassignSelectedLoot(targetUUID, targetPlayer, assignType)
     local loot = targetUUID and profile.LootList[targetUUID]
     if not loot or not targetPlayer then return end
     if not IsInRaid() or not (UnitIsGroupLeader("player") or UnitIsGroupAssistant("player")) then
-        print("|cffff0000[NGL]|r 只有團隊隊長或團隊助手可以分配裝備。")
+        print("|cffff0000[NGL]|r " .. NGL.L("core.permission.not_leader"))
         return
     end
 
@@ -384,7 +384,12 @@ function NGL.ReassignSelectedLoot(targetUUID, targetPlayer, assignType)
     loot.consumableType = newType
     loot.winnerRoll = 999
     NGL.RebuildPlayerRecords(profile)
-    SendChatMessage("【" .. (newType == "Need" and "需求" or "貪婪") .. "】" .. targetPlayer .. " 被分配獲得 " .. (loot.itemLink or "裝備") .. " (" .. newType .. ")!", "RAID_WARNING")
+    SendChatMessage(NGL.L("core.roll.winner", {
+        player = targetPlayer,
+        roll = "",
+        item = loot.itemLink or NGL.L("common.unknown"),
+        type = newType == "Need" and NGL.L("loot.need") or NGL.L("loot.greed")
+    }), "RAID_WARNING")
     NGL.RefreshLootList()
     NGL.SetSelectedLoot(targetUUID)
 end

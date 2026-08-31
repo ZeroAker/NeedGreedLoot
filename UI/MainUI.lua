@@ -9,11 +9,33 @@ ui:RegisterForDrag("LeftButton")
 ui:SetScript("OnDragStart", ui.StartMoving)
 ui:SetScript("OnDragStop", ui.StopMovingOrSizing)
 ui:Hide()
-ui.TitleText:SetText("NeedGreedLoot Control Panel")
+ui.TitleText:SetText(NGL.L("ui.title"))
 
 NGL.ui = ui
 NGL.tabs = {}
 NGL.panels = {}
+
+function NGL.RefreshLocaleUI()
+    if ui and ui.TitleText then
+        ui.TitleText:SetText(NGL.L("ui.title"))
+    end
+
+    for index, tab in ipairs(NGL.tabs or {}) do
+        local key = nil
+        if index == 1 then key = "ui.tabs.scan"
+        elseif index == 2 then key = "ui.tabs.loot_log"
+        elseif index == 3 then key = "ui.tabs.profile"
+        elseif index == 4 then key = "ui.tabs.settings"
+        elseif index == 5 then key = "ui.tabs.manual" end
+        if key and tab then
+            tab:SetText(NGL.L(key))
+        end
+    end
+
+    if NGL.RefreshSettingsPanel then
+        NGL.RefreshSettingsPanel()
+    end
+end
 
 -- Utility creation functions
 function NGL.CreateLabel(parent, text, x, y, size)
@@ -61,7 +83,6 @@ local function CreateTab(name, text, x)
     local highlight = tab:GetHighlightTexture()
     if highlight then
         highlight:ClearAllPoints()
-        -- 将蓝光纹理完美置中，并微调边距使其刚好覆盖按钮内部
         highlight:SetPoint("CENTER", tab, "CENTER", 5, -3)
     end
     
@@ -85,11 +106,11 @@ function NGL.SelectTab(index)
 end
 
 -- Create Main Tabs
-local tab1 = CreateTab("NGLTab1", "掃描開骰", 18)
-local tab2 = CreateTab("NGLTab2", "Loot Log", 0)
-local tab3 = CreateTab("NGLTab3", "Profile", 0)
-local tab4 = CreateTab("NGLTab4", "設定", 0)
-local tab5 = CreateTab("NGLTab5", "Manual", 0)
+local tab1 = CreateTab("NGLTab1", NGL.L("ui.tabs.scan"), 18)
+local tab2 = CreateTab("NGLTab2", NGL.L("ui.tabs.loot_log"), 0)
+local tab3 = CreateTab("NGLTab3", NGL.L("ui.tabs.profile"), 0)
+local tab4 = CreateTab("NGLTab4", NGL.L("ui.tabs.settings"), 0)
+local tab5 = CreateTab("NGLTab5", NGL.L("ui.tabs.manual"), 0)
 
 tab2:ClearAllPoints()
 tab2:SetPoint("LEFT", tab1, "RIGHT", 12, 0)

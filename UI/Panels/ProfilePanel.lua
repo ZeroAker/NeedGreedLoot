@@ -6,9 +6,9 @@ profilePanel:SetPoint("BOTTOMRIGHT", -12, 12)
 NGL.panels[3] = profilePanel
 
 StaticPopupDialogs["NGL_CONFIRM_DELETE_PROFILE"] = {
-    text = "確定要刪除 Profile [%s] 嗎？此操作無法復原。",
-    button1 = "刪除",
-    button2 = "取消",
+    text = NGL.L("profile.delete_confirm"),
+    button1 = NGL.L("profile.delete"),
+    button2 = NGL.L("loot.cancel"),
     OnAccept = function(_, name)
         if name ~= "default" and NGL_Profiles[name] then
             NGL_Profiles[name] = nil
@@ -23,9 +23,9 @@ StaticPopupDialogs["NGL_CONFIRM_DELETE_PROFILE"] = {
 }
 
 StaticPopupDialogs["NGL_CONFIRM_RESET_PROFILE"] = {
-    text = "確定要重置目前 Profile 嗎？所有玩家與 Loot Log 都會被清除。",
-    button1 = "重置",
-    button2 = "取消",
+    text = NGL.L("profile.reset_confirm"),
+    button1 = NGL.L("profile.reset"),
+    button2 = NGL.L("loot.cancel"),
     OnAccept = function()
         local profile = NGL.GetCurrentProfileData()
         profile.UsedNeedList = {}
@@ -42,9 +42,9 @@ StaticPopupDialogs["NGL_CONFIRM_RESET_PROFILE"] = {
     preferredIndex = 3
 }
 
-NGL.CreateLabel(profilePanel, "Profile Manager", 12, -10, "GameFontHighlightLarge")
+NGL.CreateLabel(profilePanel, NGL.L("profile.manager"), 12, -10, "GameFontHighlightLarge")
 NGL.profileName = NGL.CreateEditBox(profilePanel, 220, 24, 24, -52, NGL_CurrentProfile)
-NGL.CreateLabel(profilePanel, "Profile 名稱", 24, -42)
+NGL.CreateLabel(profilePanel, NGL.L("profile.name"), 24, -42)
 
 local profileRows = {}
 local profileScroll = CreateFrame("ScrollFrame", nil, profilePanel, "UIPanelScrollFrameTemplate")
@@ -129,7 +129,7 @@ local function RefreshNeedStatus()
         else
             row.name:SetTextColor(0.5, 0.5, 0.5)
         end
-        row.status:SetText(isUsed and "已需求" or "未需求")
+        row.status:SetText(isUsed and NGL.L("profile.used") or NGL.L("profile.unused"))
         if isUsed then
             row.status:SetTextColor(1, 0.2, 0.2)
         else
@@ -162,7 +162,7 @@ function NGL.RefreshProfiles()
             profileRows[index] = row
         end
         row:SetPoint("TOPLEFT", 0, -(index - 1) * 28)
-        row:SetText(name == NGL_CurrentProfile and (name .. " (使用中)") or name)
+        row:SetText(name == NGL_CurrentProfile and (name .. " " .. NGL.L("profile.in_use")) or name)
         row:SetScript("OnClick", function() NGL.SwitchProfile(name) end)
         row:Show()
     end
@@ -170,7 +170,7 @@ function NGL.RefreshProfiles()
     RefreshNeedStatus()
 end
 
-NGL.CreateButton(profilePanel, "建立", 70, 270, -52, function()
+NGL.CreateButton(profilePanel, NGL.L("profile.create"), 70, 270, -52, function()
     local name = NGL.profileName:GetText()
     if name ~= "" and not NGL_Profiles[name] then
         NGL_Profiles[name] = { UsedNeedList = {}, HistoryList = {}, GreedCountList = {}, LootList = {} }
@@ -178,7 +178,7 @@ NGL.CreateButton(profilePanel, "建立", 70, 270, -52, function()
     end
 end)
 
-NGL.CreateButton(profilePanel, "複製目前", 90, 345, -52, function()
+NGL.CreateButton(profilePanel, NGL.L("profile.copy_current"), 90, 345, -52, function()
     local name = NGL.profileName:GetText()
     local source = NGL.GetCurrentProfileData()
     if name ~= "" and not NGL_Profiles[name] then
@@ -189,11 +189,11 @@ NGL.CreateButton(profilePanel, "複製目前", 90, 345, -52, function()
     end
 end)
 
-NGL.CreateButton(profilePanel, "重置", 70, 440, -52, function()
+NGL.CreateButton(profilePanel, NGL.L("profile.reset"), 70, 440, -52, function()
     StaticPopup_Show("NGL_CONFIRM_RESET_PROFILE")
 end)
 
-NGL.CreateButton(profilePanel, "刪除", 70, 515, -52, function()
+NGL.CreateButton(profilePanel, NGL.L("profile.delete"), 70, 515, -52, function()
     local name = NGL.profileName:GetText()
     if name ~= "" and name ~= "default" and NGL_Profiles[name] then
         StaticPopup_Show("NGL_CONFIRM_DELETE_PROFILE", name, nil, name)

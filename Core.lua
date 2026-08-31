@@ -82,10 +82,10 @@ end
 -- Check raid permission
 function NGL.HasPermission()
     if not IsInRaid() then
-        return false, "您目前不在團隊中，無法使用此功能"
+        return false, NGL.L("core.permission.not_in_raid")
     end
     if not (UnitIsGroupLeader("player") or UnitIsGroupAssistant("player")) then
-        return false, "您不是團隊隊長或團隊助手，無權發起或管理裝備分配！"
+        return false, NGL.L("core.permission.not_leader")
     end
     return true, nil
 end
@@ -172,8 +172,14 @@ function NGL.FinishRoll()
     local profData = NGL.GetCurrentProfileData()
 
     if winner then
-        local typeStr = winnerIsNeed and "【需求】" or "【貪婪】"
-        NGL.SendRW("恭喜 " .. winner .. " 以 " .. highestRoll .. " 點 " .. typeStr .. " 獲得 " .. NGL.currentItemLink .. "！")
+        local typeStr = winnerIsNeed and "Need" or "Greed"
+        local typeLabel = winnerIsNeed and NGL.L("loot.need") or NGL.L("loot.greed")
+        NGL.SendRW(NGL.L("core.roll.winner", {
+            player = winner,
+            roll = highestRoll,
+            item = NGL.currentItemLink,
+            type = typeLabel
+        }))
 
         NGL.currentLoot.winnerName = winner
         NGL.currentLoot.consumableType = winnerIsNeed and "Need" or "Greed"
@@ -189,13 +195,20 @@ function NGL.FinishRoll()
 
         if winnerIsNeed then
             profData.UsedNeedList[winner] = true
-            print("|cff00ff00[NGL Profile: " .. NGL_CurrentProfile .. "]|r 已消耗 " .. winner .. " 的需求機會。")
+            print("|cff00ff00[NGL Profile: " .. NGL_CurrentProfile .. "]|r " .. NGL.L("core.roll.need_used", {
+                profile = NGL_CurrentProfile,
+                player = winner
+            }))
         else
             profData.GreedCountList[winner] = (profData.GreedCountList[winner] or 0) + 1
-            print("|cff00ff00[NGL Profile: " .. NGL_CurrentProfile .. "]|r 已記錄 " .. winner .. " 貪婪獲勝 (+1，累計: " .. profData.GreedCountList[winner] .. " 次)。")
+            print("|cff00ff00[NGL Profile: " .. NGL_CurrentProfile .. "]|r " .. NGL.L("core.roll.greed_count", {
+                profile = NGL_CurrentProfile,
+                player = winner,
+                count = profData.GreedCountList[winner]
+            }))
         end
     else
-        NGL.SendRW((NGL.currentItemLink or "裝備") .. " 擲骰結束，無人擲骰。")
+        NGL.SendRW(NGL.L("core.roll.no_winner", { item = (NGL.currentItemLink or NGL.L("common.unknown")) }))
     end
 
     profData.LootList[NGL.currentLoot.uuid] = NGL.currentLoot
@@ -228,12 +241,12 @@ function StartNGLRoll(itemLink, duration, mode)
     end
 
     if NGL.isRolling then
-        print("|cffff0000[NGL]|r 目前已有裝備正在進行擲骰中！")
+        print("|cffff0000[NGL]|r " .. NGL.L("core.roll.already_running"))
         return
     end
 
     if not itemLink then
-        print("|cffff0000[NGL]|r 無法識別裝備連結！")
+        print("|cffff0000[NGL]|r " .. NGL.L("core.roll.invalid_item"))
         return
     end
 
@@ -246,16 +259,16 @@ function StartNGLRoll(itemLink, duration, mode)
     NGL.currentRollMode = mode or "ALL"
     NGL.rolls = {}
 
-    local modeTag = "【需求優先】"
+    local modeTag = NGL.L("core.roll.need_priority")
     if NGL.currentRollMode == "NEED" then
-        modeTag = "【需求擲骰】"
+        modeTag = NGL.L("core.roll.need_roll")
     elseif NGL.currentRollMode == "GREED" then
-        modeTag = "【貪婪擲骰】"
+        modeTag = NGL.L("core.roll.greed_roll")
     end
 
-    NGL.DebugPrint("擲骰開始！Profile: " .. NGL_CurrentProfile .. " | 模式: " .. NGL.currentRollMode .. " | 秒數: " .. totalTime)
+    NGL.DebugPrint("Roll start! Profile: " .. NGL_CurrentProfile .. " | Mode: " .. NGL.currentRollMode .. " | Seconds: " .. totalTime)
 
-    NGL.SendRW(modeTag .. " " .. itemLink .. " 開放擲骰！請使用 /roll (倒數 " .. totalTime .. " 秒)")
+    NGL.SendRW(NGL.L("core.roll.start", { mode = modeTag, item = itemLink, seconds = totalTime }))
 
     local warningStartSec = 5
     local waitTime = totalTime - warningStartSec
@@ -265,22 +278,22 @@ function StartNGLRoll(itemLink, duration, mode)
             if not NGL.isRolling then return end
             
             local secondsLeft = warningStartSec
-            NGL.SendRW(modeTag .. " " .. NGL.currentItemLink .. " 倒數最後 " .. secondsLeft .. " 秒！")
+            NGL.SendRW(NGL.L("core.roll.warning", { mode = modeTag, item = NGL.currentItemLink, seconds = secondsLeft }))
             
             NGL.countdownTimer = C_Timer.NewTicker(1, function()
                 secondsLeft = secondsLeft - 1
                 if NGL.isRolling and secondsLeft > 0 then
-                    NGL.SendRW(modeTag .. " " .. NGL.currentItemLink .. " 倒數最後 " .. secondsLeft .. " 秒！")
+                    NGL.SendRW(NGL.L("core.roll.warning", { mode = modeTag, item = NGL.currentItemLink, seconds = secondsLeft }))
                 end
             end, warningStartSec - 1)
         end)
     else
         local secondsLeft = totalTime
-        NGL.SendRW(modeTag .. " " .. NGL.currentItemLink .. " 倒數最後 " .. secondsLeft .. " 秒！")
+        NGL.SendRW(NGL.L("core.roll.warning", { mode = modeTag, item = NGL.currentItemLink, seconds = secondsLeft }))
         NGL.countdownTimer = C_Timer.NewTicker(1, function()
             secondsLeft = secondsLeft - 1
             if NGL.isRolling and secondsLeft > 0 then
-                NGL.SendRW(modeTag .. " " .. NGL.currentItemLink .. " 倒數最後 " .. secondsLeft .. " 秒！")
+                NGL.SendRW(NGL.L("core.roll.warning", { mode = modeTag, item = NGL.currentItemLink, seconds = secondsLeft }))
             end
         end, totalTime - 1)
     end
@@ -306,34 +319,34 @@ function StartNGLRollFromMouseover(duration, mode)
     if itemLink then
         StartNGLRoll(itemLink, duration, mode)
     else
-        print("|cffff0000[NGL]|r 請將滑鼠指在背包或裝備欄的物品上方！")
+        print("|cffff0000[NGL]|r " .. NGL.L("core.roll.hover_required"))
     end
 end
 
 -- Display help command
 local function PrintHelp()
-    print("|cff00ff00=== [NeedGreedLoot 一需多貪助手] 指令表 ===|r")
-    print(" |cffffd100[當前 Profile: " .. NGL_CurrentProfile .. "]|r")
-    print(" |cffffd100/ngl|r - 需求優先 (尚有需求者為需求，已消耗者為貪婪)")
-    print(" |cffffd100/ngln|r - 需求擲骰 (僅未消耗需求的玩家可參與，已消耗者 Roll 無效)")
-    print(" |cffffd100/nglg|r - 貪婪擲骰 (所有人皆可參與且全算貪婪，不消耗需求，記錄貪婪次數)")
-    print(" |cffffd100/ngl [秒數]|r / |cffffd100/ngln [秒數]|r / |cffffd100/nglg [秒數]|r - 對懸停物品發起指定秒數開骰")
-    print(" |cffffd100/ngl [裝備] [秒數]|r - 對指定裝備連結發起開骰")
-    print(" |cffffd100/ngl profile [名稱]|r - 切換至指定 Profile")
-    print(" |cffffd100/ngl profile new [名稱]|r - 建立新的 Profile 並自動切換過去")
-    print(" |cffffd100/ngl profile delete [名稱]|r - 準備刪除指定的 Profile (需輸入 /ngl yes 確認)")
-    print(" |cffffd100/ngl yes|r - 確認刪除處於等待狀態的 Profile")
-    print(" |cffffd100/ngl default|r - 切換回預設 (default) Profile")
-    print(" |cffffd100/ngl profiles|r - 列出所有已建立的 Profile 清單")
-    print(" |cffffd100/ngl list|r - 查看當前 Profile 玩家需求狀態、貪婪次數與獲獎歷史")
-    print(" |cffffd100/ngl reset|r - 重置當前 Profile 所有玩家紀錄")
-    print(" |cffffd100/ngl timer [秒數]|r - 設定全域預設倒數秒數 (目前: " .. NGL_DefaultTimer .. " 秒)")
-    print(" |cffffd100/ngl stop|r - 提前結束當前開骰並立即結算")
-    print(" |cffffd100/ngl abort|r - 終止當前開骰，不結算且不計數")
-    print(" |cffffd100/ngl ui|r - 開啟 NeedGreedLoot 控制面板")
-    print(" |cffffd100/ngl debug|r - 開關 Debug 除錯模式訊息輸出")
-    print(" |cffffd100/ngl help|r - 顯示此指令說明選單")
-    print("|cff00ff00========================================|r")
+    print("|cff00ff00" .. NGL.L("core.help.title") .. "|r")
+    print(" |cffffd100" .. NGL.L("core.help.current_profile", { profile = NGL_CurrentProfile }) .. "|r")
+    print(NGL.L("core.help.ngl"))
+    print(NGL.L("core.help.ngln"))
+    print(NGL.L("core.help.nglg"))
+    print(NGL.L("core.help.ngl_timer"))
+    print(NGL.L("core.help.ngl_item"))
+    print(NGL.L("core.help.profile_switch"))
+    print(NGL.L("core.help.profile_new"))
+    print(NGL.L("core.help.profile_delete"))
+    print(NGL.L("core.help.yes"))
+    print(NGL.L("core.help.default"))
+    print(NGL.L("core.help.profiles"))
+    print(NGL.L("core.help.list"))
+    print(NGL.L("core.help.reset"))
+    print(NGL.L("core.help.timer", { seconds = NGL_DefaultTimer }))
+    print(NGL.L("core.help.stop"))
+    print(NGL.L("core.help.abort"))
+    print(NGL.L("core.help.ui"))
+    print(NGL.L("core.help.debug"))
+    print(NGL.L("core.help.help"))
+    print(NGL.L("core.help.footer"))
 end
 
 -- System Event Handling
@@ -391,23 +404,35 @@ frame:SetScript("OnEvent", function(self, event, arg1, msg)
 
                 if NGL.currentRollMode == "NEED" then
                     if isUsedNeed then
-                        print("|cffff0000[NGL]|r 玩家 " .. cleanName .. " 已消耗需求資格，本次【僅限需求】開骰點數無效！")
+                        print("|cffff0000[NGL]|r " .. NGL.L("core.command.player_not_found", { name = cleanName }))
                         return
                     else
                         NGL.rolls[cleanName] = { roll = roll, isNeed = true, rollType = "Need" }
                         recorded = true
-                        print("|cff00ff00[NGL]|r 成功記錄 " .. cleanName .. ": " .. roll .. " 點 (|cff00ff00需求|r)")
+                        print("|cff00ff00[NGL]|r " .. NGL.L("core.command.roll_recorded", {
+                            player = cleanName,
+                            roll = roll,
+                            type = NGL.L("loot.need")
+                        }))
                     end
                 elseif NGL.currentRollMode == "GREED" then
                     NGL.rolls[cleanName] = { roll = roll, isNeed = false, rollType = "Greed" }
                     recorded = true
-                    print("|cff00ff00[NGL]|r 成功記錄 " .. cleanName .. ": " .. roll .. " 點 (|cffff9900貪婪|r)")
+                    print("|cff00ff00[NGL]|r " .. NGL.L("core.command.roll_recorded", {
+                        player = cleanName,
+                        roll = roll,
+                        type = NGL.L("loot.greed")
+                    }))
                 else
                     local isNeed = not isUsedNeed
                     NGL.rolls[cleanName] = { roll = roll, isNeed = isNeed, rollType = isNeed and "Need" or "Greed" }
                     recorded = true
-                    local typeText = isNeed and "|cff00ff00需求|r" or "|cffff9900貪婪|r"
-                    print("|cff00ff00[NGL]|r 成功記錄 " .. cleanName .. ": " .. roll .. " 點 (" .. typeText .. ")")
+                    local typeText = isNeed and NGL.L("loot.need") or NGL.L("loot.greed")
+                    print("|cff00ff00[NGL]|r " .. NGL.L("core.command.roll_recorded", {
+                        player = cleanName,
+                        roll = roll,
+                        type = typeText
+                    }))
                 end
 
                 if recorded then
@@ -449,12 +474,12 @@ local function HandleNGLSlash(msg, mode)
         if NGL_ToggleUI then
             NGL_ToggleUI()
         else
-            print("|cffff0000[NGL]|r 控制面板尚未載入，請重新載入介面。")
+            print("|cffff0000[NGL]|r " .. NGL.L("core.command.ui_missing"))
         end
 
     elseif cmd == "yes" then
         if not pendingDeleteProfile then
-            print("|cffff0000[NGL]|r 沒有待刪除的 Profile!")
+            print("|cffff0000[NGL]|r " .. NGL.L("profile.no_pending"))
             return
         end
 
@@ -465,12 +490,12 @@ local function HandleNGLSlash(msg, mode)
         pendingDeleteProfile = nil
 
         if not NGL_Profiles[targetProf] then
-            print("|cffff0000[NGL]|r Profile [" .. targetProf .. "] 不存在，無法刪除！")
+            print("|cffff0000[NGL]|r " .. NGL.L("profile.not_found", { name = targetProf }))
             return
         end
 
         NGL_Profiles[targetProf] = nil
-        print("|cff00ff00[NGL]|r 已成功刪除 Profile：|cffffd100[" .. targetProf .. "]|r")
+        print("|cff00ff00[NGL]|r " .. NGL.L("profile.deleted", { name = targetProf }))
 
         if targetProf == NGL_CurrentProfile then
             NGL_Profiles["default"] = NGL_Profiles["default"] or {
@@ -481,12 +506,12 @@ local function HandleNGLSlash(msg, mode)
             }
             NGL_CurrentProfile = "default"
             NGL.NotifyProfileChanged()
-            print("|cff00ff00[NGL]|r  由於剛刪除了當前正使用的 Profile，已自動切換回：|cffffd100[default]|r")
+            print("|cff00ff00[NGL]|r " .. NGL.L("profile.auto_switch_default"))
         end
 
     elseif cmd == "profile" then
         if rest == "" then
-            print("|cffff0000[NGL]|r 請輸入欲切換的 Profile 名稱！目前使用中：|cffffd100[" .. NGL_CurrentProfile .. "]|r")
+            print("|cffff0000[NGL]|r " .. NGL.L("profile.no_name", { name = NGL_CurrentProfile }))
             return
         end
 
@@ -496,11 +521,11 @@ local function HandleNGLSlash(msg, mode)
 
         if subCmd == "new" then
             if subRest == "" then
-                print("|cffff0000[NGL]|r 請輸入欲建立的 Profile 名稱！範例：/ngl profile new 25人團")
+                print("|cffff0000[NGL]|r " .. NGL.L("profile.no_create_name"))
                 return
             end
             if NGL_Profiles[subRest] then
-                print("|cffff0000[NGL]|r Profile [" .. subRest .. "] 已經存在！切換請用：/ngl profile " .. subRest)
+                print("|cffff0000[NGL]|r " .. NGL.L("profile.exists", { name = subRest }))
                 return
             end
             NGL_Profiles[subRest] = {
@@ -511,15 +536,15 @@ local function HandleNGLSlash(msg, mode)
             }
             NGL_CurrentProfile = subRest
             NGL.NotifyProfileChanged()
-            print("|cff00ff00[NGL]|r 已成功建立並切換至新 Profile：|cffffd100[" .. subRest .. "]|r")
+            print("|cff00ff00[NGL]|r " .. NGL.L("profile.create_success", { name = subRest }))
 
         elseif subCmd == "delete" then
             if subRest == "" then
-                print("|cffff0000[NGL]|r 請輸入欲刪除的 Profile 名稱！範例：/ngl profile delete 25人團")
+                print("|cffff0000[NGL]|r " .. NGL.L("core.command.profile_delete_required"))
                 return
             end
             if not NGL_Profiles[subRest] then
-                print("|cffff0000[NGL]|r 找不到名為 [" .. subRest .. "] 的 Profile！")
+                print("|cffff0000[NGL]|r " .. NGL.L("profile.not_found", { name = subRest }))
                 return
             end
 
@@ -529,7 +554,7 @@ local function HandleNGLSlash(msg, mode)
 
             local timer = C_Timer.NewTimer(30, function()
                 if pendingDeleteProfile and pendingDeleteProfile.profileName == subRest then
-                    print("|cffff0000[NGL]|r 刪除 Profile [" .. subRest .. "] 已超時取消。")
+                    print("|cffff0000[NGL]|r " .. NGL.L("profile.delete_timeout", { name = subRest }))
                     pendingDeleteProfile = nil
                 end
             end)
@@ -539,34 +564,34 @@ local function HandleNGLSlash(msg, mode)
                 timer = timer
             }
 
-            local warnMsg = "|cffff0000[NGL 警告]|r 您確定要刪除 Profile |cffffd100[" .. subRest .. "]|r 嗎？"
+            local warnMsg = "|cffff0000[NGL 警告]|r " .. NGL.L("profile.delete_confirm", { name = subRest })
             if subRest == NGL_CurrentProfile then
                 warnMsg = warnMsg .. " (包含當前正在使用的紀錄！刪除後將自動切換回 default)"
             end
             print(warnMsg)
-            print("👉請在 30 秒內輸入 |cff00ff00/ngl yes|r 以確認刪除。")
+            print("👉" .. NGL.L("core.command.profile_delete_prompt"))
 
         else
             if not NGL_Profiles[rest] then
-                print("|cffff0000[NGL]|r 找不到名為 [" .. rest .. "] 的 Profile！可用 /ngl profile new " .. rest .. " 建立它。")
+                print("|cffff0000[NGL]|r " .. NGL.L("core.command.profile_missing", { name = rest }))
                 return
             end
             NGL_CurrentProfile = rest
             NGL.NotifyProfileChanged()
-            print("|cff00ff00[NGL]|r 已成功切換至 Profile：|cffffd100[" .. rest .. "]|r")
+            print("|cff00ff00[NGL]|r " .. NGL.L("profile.switch_success", { name = rest }))
         end
 
     elseif cmd == "default" then
         NGL_Profiles["default"] = NGL_Profiles["default"] or { UsedNeedList = {}, HistoryList = {}, GreedCountList = {}, LootList = {} }
         NGL_CurrentProfile = "default"
         NGL.NotifyProfileChanged()
-        print("|cff00ff00[NGL]|r 已成功切換回預設 Profile：|cffffd100[default]|r")
+        print("|cff00ff00[NGL]|r " .. NGL.L("profile.default_success"))
 
     elseif cmd == "profiles" then
-        print("|cff00ff00========== [NeedGreedLoot Profile 清單] ==========|r")
+        print("|cff00ff00========== [" .. NGL.L("profile.list_title") .. "] ==========|r")
         for pName, _ in pairs(NGL_Profiles) do
             if pName == NGL_CurrentProfile then
-                print(" -> |cff00ff00[" .. pName .. "]|r (使用中)")
+                print(" -> |cff00ff00[" .. pName .. "]|r " .. NGL.L("profile.in_use"))
             else
                 print("    |cffffd100[" .. pName .. "]|r")
             end
@@ -577,14 +602,14 @@ local function HandleNGLSlash(msg, mode)
         local sec = tonumber(rest)
         if sec and sec >= 5 then
             NGL_DefaultTimer = sec
-            print("|cff00ff00[NGL]|r 已將全域預設倒數時間設為" .. sec .. " 秒。")
+            print("|cff00ff00[NGL]|r " .. NGL.L("settings.timer.saved", { value = sec }))
         else
-            print("|cffff0000[NGL]|r 請輸入有效的秒數 (至少 5 秒)，例如：/ngl timer 30")
+            print("|cffff0000[NGL]|r " .. NGL.L("core.command.invalid_timer"))
         end
     elseif cmd == "debug" then
         NGL.SetDebugMode(not NGL_DebugMode)
-        local status = NGL_DebugMode and "|cff00ff00已開啟|r" or "|cffff0000已關閉|r"
-        print("|cff00ff00[NGL]|r Debug 模式 " .. status)
+        local status = NGL_DebugMode and NGL.L("common.enabled") or NGL.L("common.disabled")
+        print("|cff00ff00[NGL]|r " .. NGL.L("core.command.debug_status", { status = status }))
     elseif cmd == "reset" then
         NGL_Profiles[NGL_CurrentProfile] = {
             UsedNeedList = {},
@@ -592,9 +617,9 @@ local function HandleNGLSlash(msg, mode)
             GreedCountList = {},
             LootList = {}
         }
-        print("|cff00ff00[NGL]|r已重置當前 Profile [" .. NGL_CurrentProfile .. "] 的所有玩家紀錄。")
+        print("|cff00ff00[NGL]|r " .. NGL.L("core.command.reset_done", { name = NGL_CurrentProfile }))
     elseif cmd == "list" then
-        print("|cff00ff00========== [NGL 紀錄 - Profile: " .. NGL_CurrentProfile .. "] ==========|r")
+        print("|cff00ff00========== [" .. NGL.L("core.command.list_title", { name = NGL_CurrentProfile }) .. "] ==========|r")
         local profData = NGL.GetCurrentProfileData()
         local count = 0
         
@@ -622,7 +647,7 @@ local function HandleNGLSlash(msg, mode)
         end
 
         if count == 0 then
-            print("當前 Profile [" .. NGL_CurrentProfile .. "] 尚無任何玩家紀錄。")
+            print(NGL.L("core.command.list_empty", { name = NGL_CurrentProfile }))
         end
         print("|cff00ff00========================================|r")
     elseif cmd == "stop" then
@@ -633,10 +658,10 @@ local function HandleNGLSlash(msg, mode)
         end
 
         if NGL.isRolling then
-            NGL.SendRW("【需求優先】主控者已提前結束倒數！結算中...")
+            NGL.SendRW(NGL.L("core.command.roll_ended_early", { mode = NGL.L("core.roll.need_priority") }))
             NGL.FinishRoll()
         else
-            print("|cffff0000[NGL]|r 當前沒有正在進行中的開骰。")
+            print("|cffff0000[NGL]|r " .. NGL.L("core.command.no_active_roll"))
         end
     elseif cmd == "abort" then
         local canUse, errorMsg = NGL.HasPermission()
@@ -646,12 +671,12 @@ local function HandleNGLSlash(msg, mode)
         end
 
         if NGL.isRolling then
-            local abortedItem = NGL.currentItemLink or "本次裝備"
+            local abortedItem = NGL.currentItemLink or NGL.L("common.unknown")
             NGL.AbortRoll()
-            NGL.SendRW("【需求優先】主控者已終止 " .. abortedItem .. " 的開骰，本次不予結算。")
-            print("|cff00ff00[NGL]|r 已終止本次開骰，未更新任何紀錄。")
+            NGL.SendRW(NGL.L("core.command.roll_aborted", { mode = NGL.L("core.roll.need_priority"), item = abortedItem }))
+            print("|cff00ff00[NGL]|r " .. NGL.L("core.command.roll_aborted_done"))
         else
-            print("|cffff0000[NGL]|r 當前沒有正在進行中的開骰。")
+            print("|cffff0000[NGL]|r " .. NGL.L("core.command.no_active_roll"))
         end
     elseif tonumber(cmd) then
         StartNGLRollFromMouseover(tonumber(cmd), mode)

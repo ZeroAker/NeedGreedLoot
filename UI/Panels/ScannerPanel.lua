@@ -57,22 +57,134 @@ local scanSlots = {}
 NGL.scannedItems = {}
 NGL.selectedScanItem = nil
 
-local function IsWarboundItem(bag, slot)
-    if C_TooltipInfo and C_TooltipInfo.GetBagItem then
-        local tooltipData = C_TooltipInfo.GetBagItem(bag, slot)
-        if tooltipData and tooltipData.lines then
-            for _, line in ipairs(tooltipData.lines) do
-                if line.leftText then
-                    if string.find(line.leftText, "Warbound") or
-                       string.find(line.leftText, "戰隊") or 
-                       string.find(line.leftText, "战网") then
-                        return true
-                    end
-                end
-            end
+local function TooltipContains(text, patterns)
+    if not text then return false end
+    local lowerText = string.lower(text)
+    for _, pattern in ipairs(patterns) do
+        if string.find(lowerText, string.lower(pattern)) then
+            return true
         end
     end
     return false
+end
+
+local function GetScannerDebugState(bag, slot, itemLink)
+    local tooltipText = ""
+    if C_TooltipInfo and C_TooltipInfo.GetBagItem then
+        local tooltipData = C_TooltipInfo.GetBagItem(bag, slot)
+        if tooltipData and tooltipData.lines then
+            local textParts = {}
+            for _, line in ipairs(tooltipData.lines) do
+                if line.leftText then
+                    table.insert(textParts, line.leftText)
+                end
+            end
+            tooltipText = table.concat(textParts, " | ")
+        end
+    end
+
+    local bindsWhenEquipped = TooltipContains(tooltipText, {
+        "binds when equipped",
+        "裝備後綁定",
+        "装备后绑定"
+    })
+
+    local soulboundTradeWindow = TooltipContains(tooltipText, {
+        "soulbound",
+        "靈魂綁定",
+        "灵魂绑定"
+    }) and TooltipContains(tooltipText, {
+        "you may trade this item",
+        "trade",
+        "交易此物品",
+        "交易",
+    })
+
+    return {
+        itemLink = itemLink,
+        bag = bag,
+        slot = slot,
+        tooltipText = tooltipText,
+        bindsWhenEquipped = bindsWhenEquipped,
+        soulboundTradeWindow = soulboundTradeWindow,
+        result = bindsWhenEquipped or soulboundTradeWindow,
+    }
+end
+
+local function IsAllowedEquipSlot(equipLoc)
+    if not equipLoc or equipLoc == "" or equipLoc == "INVTYPE_NON_EQUIP" then
+        return false
+    end
+
+    local allowed = {
+        INVTYPE_HEAD = true,
+        INVTYPE_NECK = true,
+        INVTYPE_SHOULDER = true,
+        INVTYPE_CLOAK = true,
+        INVTYPE_CHEST = true,
+        INVTYPE_WRIST = true,
+        INVTYPE_HAND = true,
+        INVTYPE_WAIST = true,
+        INVTYPE_LEGS = true,
+        INVTYPE_FEET = true,
+        INVTYPE_FINGER = true,
+        INVTYPE_TRINKET = true,
+        INVTYPE_WEAPON = true,
+        INVTYPE_SHIELD = true,
+        INVTYPE_2HWEAPON = true,
+        INVTYPE_WEAPONMAINHAND = true,
+        INVTYPE_WEAPONOFFHAND = true,
+        INVTYPE_HOLDABLE = true,
+        INVTYPE_RANGED = true,
+        INVTYPE_RANGEDRIGHT = true,
+        INVTYPE_THROWN = true,
+    }
+
+    return allowed[equipLoc] == true
+end
+
+local function IsTierTokenLike(itemName, itemType, itemSubType, classID, subClassID)
+    local text = string.lower((itemName or "") .. " " .. (itemType or "") .. " " .. (itemSubType or ""))
+    local isTokenText = string.find(text, "token") or string.find(text, "omni") or string.find(text, "tier")
+    if classID == Enum.ItemClass.Miscellaneous and (subClassID == 20 or isTokenText) then
+        return true
+    end
+    return isTokenText == true
+end
+
+local function GetTooltipBindingStatus(bag, slot)
+    local tooltipText = ""
+    if C_TooltipInfo and C_TooltipInfo.GetBagItem then
+        local tooltipData = C_TooltipInfo.GetBagItem(bag, slot)
+        if tooltipData and tooltipData.lines then
+            local textParts = {}
+            for _, line in ipairs(tooltipData.lines) do
+                if line.leftText then
+                    table.insert(textParts, line.leftText)
+                end
+            end
+            tooltipText = table.concat(textParts, "\n")
+        end
+    end
+
+    local bindsWhenEquipped = TooltipContains(tooltipText, {
+        "binds when equipped",
+        "裝備後綁定",
+        "装备后绑定"
+    })
+
+    local soulboundTradeWindow = TooltipContains(tooltipText, {
+        "soulbound",
+        "靈魂綁定",
+        "灵魂绑定"
+    }) and TooltipContains(tooltipText, {
+        "you may trade this item",
+        "trade",
+        "交易此物品",
+        "交易",
+    })
+
+    return tooltipText, bindsWhenEquipped, soulboundTradeWindow
 end
 
 local function IsScannableItem(bag, slot)
@@ -87,56 +199,20 @@ local function IsScannableItem(bag, slot)
         _, _, _, equipLoc, _, classID, subClassID = GetItemInfoInstant(itemID)
     end
 
-    -- 1. Check target item types: Weapon, Armor, Triket, Miscellaneous, Tier Tokens
-    local isTargetItem = false
-    if classID then
-        if classID == Enum.ItemClass.Weapon or classID == Enum.ItemClass.Armor then
-            isTargetItem = true
-        -- Check for trinkets (subclass 19) and tier tokens (subclass 20)
-        elseif classID == Enum.ItemClass.Miscellaneous or classID == Enum.ItemClass.Container or classID == Enum.ItemClass.ItemEnhancement then
-            isTargetItem = true
-        end
-    elseif equipLoc and equipLoc ~= "" and equipLoc ~= "INVTYPE_NON_EQUIP" then
-        isTargetItem = true
+    local isEquipSlotItem = IsAllowedEquipSlot(equipLoc)
+    local isTierToken = IsTierTokenLike(itemName, itemType, itemSubType, classID, subClassID)
+    if not (isEquipSlotItem or isTierToken) then
+        return nil
     end
 
-    if not isTargetItem then return nil end
+    local tooltipText, bindsWhenEquipped, soulboundTradeWindow = GetTooltipBindingStatus(bag, slot)
 
-    -- 2. Debug mode: If enabled, return the item link for all items regardless of restrictions
     if NGL_DebugMode then
         return itemLink
     end
 
-    -- 3. filter out Warbound items (if applicable)
-    if IsWarboundItem and IsWarboundItem(bag, slot) then return nil end
-
-    local location = ItemLocation:CreateFromBagAndSlot(bag, slot)
-    if location and location:IsValid() then
-        if C_Item.IsItemWarbound and C_Item.IsItemWarbound(location) then
-            return nil
-        end
-
-        -- 4. Check for tradable time limits (Tradable Window)
-        -- Prioritize using the API for checking
-        if C_Item.IsItemTradable and C_Item.IsItemTradable(location) then
-            return itemLink
-        end
-
-        -- fallback to tooltip scanning if the API is not available
-        if C_TooltipInfo and C_TooltipInfo.GetBagItem then
-            local tooltipData = C_TooltipInfo.GetBagItem(bag, slot)
-            if tooltipData then
-                for _, line in ipairs(tooltipData.lines) do
-                    if line.leftText then
-                        -- Check for tradable time remaining or trade-related text in the tooltip
-                        if string.find(line.leftText, BIND_TRADE_TIME_REMAINING or "You may trade this item") or 
-                           string.find(line.leftText, "trade") or string.find(line.leftText, "交易") then
-                            return itemLink
-                        end
-                    end
-                end
-            end
-        end
+    if bindsWhenEquipped or soulboundTradeWindow then
+        return itemLink
     end
 
     return nil
@@ -195,6 +271,20 @@ function NGL.RefreshScanner()
                 slotButton.count:SetText(itemInfo and itemInfo.stackCount and itemInfo.stackCount > 1 and itemInfo.stackCount or "")
                 slotButton:SetScript("OnClick", function()
                     NGL.selectedScanItem = scanItem
+
+                    local debugState = GetScannerDebugState(bag, slot, itemLink)
+                    if NGL.DebugPrint then
+                        NGL.DebugPrint(string.format(
+                            "Clicked scan item: %s | bag=%d slot=%d | bindsWhenEquipped=%s | soulboundTradeWindow=%s | tooltip=%s",
+                            tostring(debugState.itemLink),
+                            debugState.bag,
+                            debugState.slot,
+                            tostring(debugState.bindsWhenEquipped),
+                            tostring(debugState.soulboundTradeWindow),
+                            tostring(debugState.tooltipText)
+                        ))
+                    end
+
                     currentItemIcon:SetTexture(itemInfo and itemInfo.iconFileID or 134400)
                     currentItemName:SetText(itemLink)
                     currentItemUUID:SetText(NGL.L("scanner.selected_slot", { bag = bag, slot = slot }))

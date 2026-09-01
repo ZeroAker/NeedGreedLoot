@@ -143,13 +143,39 @@ local function IsAllowedEquipSlot(equipLoc)
     return allowed[equipLoc] == true
 end
 
-local function IsTierTokenLike(itemName, itemType, itemSubType, classID, subClassID)
-    local text = string.lower((itemName or "") .. " " .. (itemType or "") .. " " .. (itemSubType or ""))
-    local isTokenText = string.find(text, "token") or string.find(text, "omni") or string.find(text, "tier")
-    if classID == Enum.ItemClass.Miscellaneous and (subClassID == 20 or isTokenText) then
-        return true
+local function IsTierToken(bag, slot)
+    local tooltipText = ""
+    if C_TooltipInfo and C_TooltipInfo.GetBagItem then
+        local tooltipData = C_TooltipInfo.GetBagItem(bag, slot)
+        if tooltipData and tooltipData.lines then
+            local textParts = {}
+            for _, line in ipairs(tooltipData.lines) do
+                if line.leftText then
+                    table.insert(textParts, line.leftText)
+                end
+            end
+            tooltipText = table.concat(textParts, "\n")
+        end
     end
-    return isTokenText == true
+
+    local hasSetCraftText = TooltipContains(tooltipText, {
+        "製作一件靈魂綁定的套裝",
+        "create a soulbound set",
+        "create a soulbound item set",
+        "製作一件靈魂绑定的套装",
+        "create a soulbound set piece"
+    })
+
+    local hasClassText = TooltipContains(tooltipText, {
+        "職業套裝護甲",
+        "此物品適用於你的職業",
+        "this item is for your class",
+        "this item is for your class only",
+        "此物品适用于你的职业",
+        "class set armor"
+    })
+
+    return hasSetCraftText and hasClassText
 end
 
 local function GetTooltipBindingStatus(bag, slot)
@@ -200,7 +226,7 @@ local function IsScannableItem(bag, slot)
     end
 
     local isEquipSlotItem = IsAllowedEquipSlot(equipLoc)
-    local isTierToken = IsTierTokenLike(itemName, itemType, itemSubType, classID, subClassID)
+    local isTierToken = IsTierToken(bag, slot)
     if not (isEquipSlotItem or isTierToken) then
         return nil
     end

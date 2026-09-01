@@ -6,6 +6,22 @@ NGL_CurrentProfile = NGL_CurrentProfile or "default"
 if NGL_DebugMode == nil then NGL_DebugMode = false end
 NGL_DefaultTimer = NGL_DefaultTimer or 20
 NGL_Locale = NGL_Locale or NGL.GetClientLocale()
+NGL_ScannerSettings = NGL_ScannerSettings or {}
+NGL_ScannerSettings.categoryMode = NGL_ScannerSettings.categoryMode or "NONE"
+if NGL_ScannerSettings.showBindOnEquip == nil then
+    NGL_ScannerSettings.showBindOnEquip = true
+end
+NGL_ScannerSettings.minQuality = NGL_ScannerSettings.minQuality or 4
+
+function NGL.GetScannerSettings()
+    NGL_ScannerSettings = NGL_ScannerSettings or {}
+    NGL_ScannerSettings.categoryMode = NGL_ScannerSettings.categoryMode or "NONE"
+    if NGL_ScannerSettings.showBindOnEquip == nil then
+        NGL_ScannerSettings.showBindOnEquip = true
+    end
+    NGL_ScannerSettings.minQuality = NGL_ScannerSettings.minQuality or 4
+    return NGL_ScannerSettings
+end
 
 -- Pending confirmation state for deleting a profile
 local pendingDeleteProfile = nil

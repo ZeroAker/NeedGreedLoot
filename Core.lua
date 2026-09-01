@@ -365,12 +365,38 @@ frame:SetScript("OnEvent", function(self, event, arg1, msg)
         NGL.DebugPrint("Received system msg: " .. tostring(msg))
 
         local name, rollStr, lowerBound, upperBound
-        name, rollStr, lowerBound, upperBound = string.match(msg, "^(.-)%s*(%d+)%s*[（%(]%s*(%d+)%s*[-─－]%s*(%d+)%s*[）%)]")
-        if not name or not rollStr then name, rollStr, lowerBound, upperBound = string.match(msg, "^(.-)%s*rolls%s*(%d+)%s*[（%(]%s*(%d+)%s*[-─－]%s*(%d+)%s*[）%)]") end
-        if not name or not rollStr then name, rollStr, lowerBound, upperBound = string.match(msg, "^(.-)%s*擲出%s*(%d+)%s*[（%(]%s*(%d+)%s*[-─－]%s*(%d+)%s*[）%)]") end
-        if not name or not rollStr then name, rollStr, lowerBound, upperBound = string.match(msg, "^(.-)%s*擲出%s*(%d+)%s*%(%s*(%d+)%s*[-─－]%s*(%d+)%s*%)") end
-        if not name or not rollStr then name, rollStr, lowerBound, upperBound = string.match(msg, "^(.-)%s*掷出%s*(%d+)%s*[（%(]%s*(%d+)%s*[-─－]%s*(%d+)%s*[）%)]") end
 
+        local cleaned = string.gsub(msg, "|c%x%x%x%x%x%x%x%x", "")
+        cleaned = string.gsub(cleaned, "|r", "")
+        cleaned = string.gsub(cleaned, "^%s*(.-)%s*$", "%1")
+
+        local numbers = {}
+        for num in string.gmatch(cleaned, "%d+") do
+            table.insert(numbers, tonumber(num))
+        end
+
+        if #numbers >= 3 then
+            local firstNumberPos = string.find(cleaned, "%d+")
+            local beforeRoll = firstNumberPos and string.sub(cleaned, 1, firstNumberPos - 1) or ""
+            beforeRoll = string.gsub(beforeRoll, "%s+$", "")
+
+            local suffixes = { "擲出", "掷出", "rolls" }
+            for _, suffix in ipairs(suffixes) do
+                local suffixLen = #suffix
+                if suffixLen > 0 and #beforeRoll >= suffixLen and string.sub(beforeRoll, -suffixLen) == suffix then
+                    beforeRoll = string.sub(beforeRoll, 1, #beforeRoll - suffixLen)
+                    break
+                end
+            end
+
+            name = string.gsub(beforeRoll, "%s+$", "")
+            name = string.gsub(name, "^%s*(.-)%s*$", "%1")
+            rollStr = numbers[1]
+            lowerBound = numbers[2]
+            upperBound = numbers[3]
+        end
+
+        NGL.DebugPrint(string.format("Parsed roll: name=[%s] roll=[%s] range=[%s-%s] raw=[%s]", tostring(name), tostring(rollStr), tostring(lowerBound), tostring(upperBound), tostring(cleaned)))
         if name and rollStr then
             local roll = tonumber(rollStr)
             local rawName = name

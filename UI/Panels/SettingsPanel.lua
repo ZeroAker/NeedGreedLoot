@@ -23,6 +23,11 @@ debugBtn:SetPoint("TOPLEFT", controlLeft, -108)
 local timerLabel = NGL.CreateLabel(settingsPanel, NGL.L("settings.timer"), rowLeft, -166)
 local timerInput = NGL.CreateEditBox(settingsPanel, 100, 24, controlLeft, -160, tostring(NGL_DefaultTimer))
 
+local scannerBoundButton = CreateFrame("CheckButton", nil, settingsPanel, "InterfaceOptionsCheckButtonTemplate")
+scannerBoundButton:SetPoint("TOPLEFT", controlLeft, -214)
+local scannerBoundLabel = scannerBoundButton.Text or scannerBoundButton:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+scannerBoundLabel:SetPoint("LEFT", scannerBoundButton, "RIGHT", 4, 0)
+
 local applyButton = NGL.CreateButton(settingsPanel, NGL.L("settings.apply"), 70, controlLeft + 110, -160, function()
     local value = tonumber(timerInput:GetText())
     if value and value >= 5 then
@@ -74,6 +79,8 @@ function NGL.RefreshSettingsPanel()
     languageLabel:SetText(NGL.L("settings.language"))
     debugLabel:SetText(NGL.L("settings.debug"):gsub("%s*:%s*%{state%}", ""))
     timerLabel:SetText(NGL.L("settings.timer"))
+    scannerBoundLabel:SetText(NGL.L("settings.scanner_boe"))
+    scannerBoundButton:SetChecked(NGL.GetScannerSettings().showBindOnEquip)
     applyButton:SetText(NGL.L("settings.apply"))
     RefreshLocaleDropdown()
     UpdateDebugBtnText()
@@ -86,6 +93,11 @@ settingsPanel:SetScript("OnShow", function()
     NGL.RefreshSettingsPanel()
 end)
 
+scannerBoundButton:SetScript("OnClick", function(self)
+    NGL.GetScannerSettings().showBindOnEquip = self:GetChecked()
+    if NGL.scannerPanel and NGL.scannerPanel:IsShown() then NGL.RefreshScanner() end
+end)
+
 debugBtn:SetScript("OnClick", function()
     NGL.SetDebugMode(not NGL_DebugMode)
     if NGL.scannerPanel and NGL.scannerPanel:IsShown() and NGL.RefreshScanner then
@@ -94,3 +106,4 @@ debugBtn:SetScript("OnClick", function()
     local state = NGL_DebugMode and NGL.L("common.enabled") or NGL.L("common.disabled")
     print("|cff00ff00[NGL]|r " .. NGL.L("settings.debug.toggle", { state = state }))
 end)
+

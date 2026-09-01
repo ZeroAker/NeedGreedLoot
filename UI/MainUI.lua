@@ -35,6 +35,9 @@ function NGL.RefreshLocaleUI()
     if NGL.RefreshSettingsPanel then
         NGL.RefreshSettingsPanel()
     end
+    if NGL.RefreshScannerControls then
+        NGL.RefreshScannerControls()
+    end
 end
 
 -- Utility creation functions

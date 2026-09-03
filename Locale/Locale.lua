@@ -59,6 +59,8 @@ NGL.Locale.translations = {
         ["scanner.dropdown.choose_player"] = "Select team player",
         ["scanner.status.empty"] = "No item selected",
         ["scanner.status.selected"] = "Selected bag {bag}, slot {slot}",
+        ["scanner.category.tier_token"] = "Tier Set",
+        ["scanner.category.weapon"] = "Weapons",
 
         ["loot.title"] = "Loot Log",
         ["loot.search"] = "Search item or UUID",
@@ -243,6 +245,8 @@ NGL.Locale.translations = {
         ["scanner.end_early"] = "提前結束",
         ["scanner.abort"] = "終止",
         ["scanner.selected_slot"] = "已選取背包 {bag}, 格位 {slot}",
+        ["scanner.category.tier_token"] = "職業套裝",
+        ["scanner.category.weapon"] = "武器",
 
         ["loot.title"] = "戰利品記錄",
         ["loot.search"] = "搜尋裝備或 UUID",

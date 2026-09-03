@@ -133,7 +133,7 @@ local function TooltipContains(text, patterns)
     return false
 end
 
-local function GetScannerDebugState(bag, slot, itemLink)
+local function GetScannerDebugState(bag, slot, itemLink, quality, effectiveQuality)
     local tooltipText = ""
     if C_TooltipInfo and C_TooltipInfo.GetBagItem then
         local tooltipData = C_TooltipInfo.GetBagItem(bag, slot)
@@ -160,13 +160,13 @@ local function GetScannerDebugState(bag, slot, itemLink)
         "灵魂绑定"
     }) and TooltipContains(tooltipText, {
         "you may trade this item",
-        "trade",
         "交易此物品",
-        "交易",
     })
 
     return {
         itemLink = itemLink,
+        quality = quality or 0,
+        effectiveQuality = effectiveQuality or quality or 0,
         bag = bag,
         slot = slot,
         tooltipText = tooltipText,
@@ -231,6 +231,14 @@ local function IsTierToken(tooltipText)
     return hasSetCraftText and hasClassText
 end
 
+local function IsMythicDifficultyItem(tooltipText)
+    return TooltipContains(tooltipText, {
+        "傳奇難度",
+        "传奇难度",
+        "mythic",
+    })
+end
+
 local function GetBagTooltipText(bag, slot)
     local tooltipText = ""
     if C_TooltipInfo and C_TooltipInfo.GetBagItem then
@@ -261,9 +269,7 @@ local function GetTooltipBindingStatus(tooltipText)
         "灵魂绑定"
     }) and TooltipContains(tooltipText, {
         "you may trade this item",
-        "trade",
         "交易此物品",
-        "交易",
     })
 
     return tooltipText, bindsWhenEquipped, soulboundTradeWindow
@@ -302,8 +308,11 @@ local function GetScannerItem(bag, slot)
     itemLevel = itemLevel or 0
     itemSubType = itemSubType or instantSubType or ""
     equipLoc = equipLoc or instantEquipLoc or ""
-
     local tooltipText = GetBagTooltipText(bag, slot)
+    local effectiveQuality = quality
+    if quality < 4 and IsMythicDifficultyItem(tooltipText) then
+        effectiveQuality = 4
+    end
     local _, bindsWhenEquipped, soulboundTradeWindow = GetTooltipBindingStatus(tooltipText)
     local tradeSeconds = GetTradeSeconds(tooltipText)
     local isEquipSlotItem = IsAllowedEquipSlot(equipLoc)
@@ -316,7 +325,7 @@ local function GetScannerItem(bag, slot)
     if NGL_DebugMode then
         return {
             bag = bag, slot = slot, itemLink = itemLink, itemID = itemID,
-            itemName = itemName or itemLink, quality = quality, itemLevel = itemLevel,
+            itemName = itemName or itemLink, quality = quality, effectiveQuality = effectiveQuality, itemLevel = itemLevel,
             itemSubType = itemSubType, equipLoc = equipLoc, icon = icon,
             bindsWhenEquipped = bindsWhenEquipped,
             soulboundTradeWindow = soulboundTradeWindow,
@@ -328,7 +337,7 @@ local function GetScannerItem(bag, slot)
 
     return {
         bag = bag, slot = slot, itemLink = itemLink, itemID = itemID,
-        itemName = itemName or itemLink, quality = quality, itemLevel = itemLevel,
+        itemName = itemName or itemLink, quality = quality, effectiveQuality = effectiveQuality, itemLevel = itemLevel,
         itemSubType = itemSubType, equipLoc = equipLoc, icon = icon,
         bindsWhenEquipped = bindsWhenEquipped,
         soulboundTradeWindow = soulboundTradeWindow,
@@ -339,7 +348,7 @@ end
 local function IsScannableItem(bag, slot)
     local item = GetScannerItem(bag, slot)
     local settings = NGL.GetScannerSettings()
-    if not item or item.quality < settings.minQuality then return nil end
+    if not item or item.effectiveQuality < settings.minQuality then return nil end
     if item.bindsWhenEquipped and not settings.showBindOnEquip then return nil end
     return item
 end
@@ -420,11 +429,13 @@ function NGL.RefreshScanner()
                 slotButton:SetScript("OnClick", function()
                     NGL.selectedScanItem = scanItem
 
-                    local debugState = GetScannerDebugState(scanItem.bag, scanItem.slot, scanItem.itemLink)
+                    local debugState = GetScannerDebugState(scanItem.bag, scanItem.slot, scanItem.itemLink, scanItem.quality, scanItem.effectiveQuality)
                     if NGL.DebugPrint then
                         NGL.DebugPrint(string.format(
-                            "Clicked scan item: %s | bag=%d slot=%d | bindsWhenEquipped=%s | soulboundTradeWindow=%s | tooltip=%s",
+                            "Clicked scan item: %s | quality=%d effectiveQuality=%d | bag=%d slot=%d | bindsWhenEquipped=%s | soulboundTradeWindow=%s | tooltip=%s",
                             tostring(debugState.itemLink),
+                            debugState.quality,
+                            debugState.effectiveQuality,
                             debugState.bag,
                             debugState.slot,
                             tostring(debugState.bindsWhenEquipped),

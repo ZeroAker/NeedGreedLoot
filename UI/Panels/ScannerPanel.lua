@@ -6,8 +6,8 @@ scannerPanel:SetPoint("BOTTOMRIGHT", -12, 12)
 NGL.panels[1] = scannerPanel
 NGL.scannerPanel = scannerPanel
 
-NGL.CreateLabel(scannerPanel, NGL.L("scanner.title"), 12, -10, "GameFontHighlightLarge")
-NGL.CreateLabel(scannerPanel, NGL.L("scanner.current_item"), 24, -42, "GameFontHighlight")
+local titleLabel = NGL.CreateLabel(scannerPanel, NGL.L("scanner.title"), 12, -10, "GameFontHighlightLarge")
+local currentItemLabel = NGL.CreateLabel(scannerPanel, NGL.L("scanner.current_item"), 24, -42, "GameFontHighlight")
 
 local qualityLabel = NGL.CreateLabel(scannerPanel, NGL.L("scanner.min_quality"), 175, -10)
 local qualityDropdown = CreateFrame("Frame", nil, scannerPanel, "UIDropDownMenuTemplate")
@@ -46,14 +46,14 @@ currentItemUUID:SetWordWrap(false)
 
 NGL.scannerDurationInput = NGL.CreateEditBox(scannerPanel, 70, 24, 540, -62, tostring(NGL_DefaultTimer))
 local durationInput = NGL.scannerDurationInput
-NGL.CreateLabel(scannerPanel, NGL.L("scanner.seconds"), 615, -68)
+local secondsLabel = NGL.CreateLabel(scannerPanel, NGL.L("scanner.seconds"), 615, -68)
 
 local scanDivider = scannerPanel:CreateTexture(nil, "ARTWORK")
 scanDivider:SetColorTexture(0.5, 0.5, 0.5, 0.8)
 scanDivider:SetPoint("TOPLEFT", 24, -122)
 scanDivider:SetSize(820, 1)
 
-NGL.CreateLabel(scannerPanel, NGL.L("scanner.bag_items"), 24, -142, "GameFontHighlight")
+local bagItemsLabel = NGL.CreateLabel(scannerPanel, NGL.L("scanner.bag_items"), 24, -142, "GameFontHighlight")
 
 local scanScroll = CreateFrame("ScrollFrame", nil, scannerPanel, "UIPanelScrollFrameTemplate")
 scanScroll:SetPoint("TOPLEFT", 24, -166)
@@ -550,20 +550,20 @@ function NGL.RefreshScanner()
     scanList:SetHeight(math.max(1, listHeight))
 end
 
-NGL.CreateButton(scannerPanel, NGL.L("scanner.scan_bag"), 90, 24, -112, NGL.RefreshScanner)
-NGL.CreateButton(scannerPanel, NGL.L("scanner.need_priority"), 90, 175, -112, function()
+local scanBagButton = NGL.CreateButton(scannerPanel, NGL.L("scanner.scan_bag"), 90, 24, -112, NGL.RefreshScanner)
+local needPriorityButton = NGL.CreateButton(scannerPanel, NGL.L("scanner.need_priority"), 90, 175, -112, function()
     if NGL.selectedScanItem then StartNGLRoll(NGL.selectedScanItem.itemLink, durationInput:GetText(), "ALL") end
 end)
-NGL.CreateButton(scannerPanel, NGL.L("scanner.need_roll"), 90, 270, -112, function()
+local needRollButton = NGL.CreateButton(scannerPanel, NGL.L("scanner.need_roll"), 90, 270, -112, function()
     if NGL.selectedScanItem then StartNGLRoll(NGL.selectedScanItem.itemLink, durationInput:GetText(), "NEED") end
 end)
-NGL.CreateButton(scannerPanel, NGL.L("scanner.greed_roll"), 90, 365, -112, function()
+local greedRollButton = NGL.CreateButton(scannerPanel, NGL.L("scanner.greed_roll"), 90, 365, -112, function()
     if NGL.selectedScanItem then StartNGLRoll(NGL.selectedScanItem.itemLink, durationInput:GetText(), "GREED") end
 end)
-NGL.CreateButton(scannerPanel, NGL.L("scanner.end_early"), 90, 460, -112, function()
+local endEarlyButton = NGL.CreateButton(scannerPanel, NGL.L("scanner.end_early"), 90, 460, -112, function()
     SlashCmdList["NGL"]("stop")
 end)
-NGL.CreateButton(scannerPanel, NGL.L("scanner.abort"), 90, 555, -112, function()
+local abortButton = NGL.CreateButton(scannerPanel, NGL.L("scanner.abort"), 90, 555, -112, function()
     SlashCmdList["NGL"]("abort")
 end)
 
@@ -574,3 +574,17 @@ scannerPanel:SetScript("OnShow", function()
     RefreshScannerControls()
     NGL.RefreshScanner()
 end)
+
+function NGL.RefreshScannerLocale()
+    titleLabel:SetText(NGL.L("scanner.title"))
+    currentItemLabel:SetText(NGL.L("scanner.current_item"))
+    secondsLabel:SetText(NGL.L("scanner.seconds"))
+    bagItemsLabel:SetText(NGL.L("scanner.bag_items"))
+    scanBagButton:SetText(NGL.L("scanner.scan_bag"))
+    needPriorityButton:SetText(NGL.L("scanner.need_priority"))
+    needRollButton:SetText(NGL.L("scanner.need_roll"))
+    greedRollButton:SetText(NGL.L("scanner.greed_roll"))
+    endEarlyButton:SetText(NGL.L("scanner.end_early"))
+    abortButton:SetText(NGL.L("scanner.abort"))
+    currentItemName:SetText(NGL.selectedScanItem and NGL.selectedScanItem.itemLink or NGL.L("scanner.no_item_selected"))
+end

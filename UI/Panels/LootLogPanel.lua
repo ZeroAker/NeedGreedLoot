@@ -23,13 +23,13 @@ StaticPopupDialogs["NGL_CONFIRM_DELETE_LOOT"] = {
     preferredIndex = 3
 }
 
-NGL.CreateLabel(lootPanel, NGL.L("loot.title"), 12, -10, "GameFontHighlightLarge")
+local titleLabel = NGL.CreateLabel(lootPanel, NGL.L("loot.title"), 12, -10, "GameFontHighlightLarge")
 lootPanel.search = NGL.CreateEditBox(lootPanel, 240, 24, 12, -42)
 lootPanel.search:SetScript("OnTextChanged", function() NGL.RefreshLootList() end)
-NGL.CreateLabel(lootPanel, NGL.L("loot.search"), 258, -48)
-NGL.CreateButton(lootPanel, NGL.L("loot.all"), 55, 405, -42, function() activeFilter = "ALL"; NGL.RefreshLootList() end)
-NGL.CreateButton(lootPanel, NGL.L("loot.unassigned"), 65, 465, -42, function() activeFilter = "OPEN"; NGL.RefreshLootList() end)
-NGL.CreateButton(lootPanel, NGL.L("loot.assigned"), 65, 535, -42, function() activeFilter = "WON"; NGL.RefreshLootList() end)
+local searchLabel = NGL.CreateLabel(lootPanel, NGL.L("loot.search"), 258, -48)
+local allButton = NGL.CreateButton(lootPanel, NGL.L("loot.all"), 55, 405, -42, function() activeFilter = "ALL"; NGL.RefreshLootList() end)
+local unassignedButton = NGL.CreateButton(lootPanel, NGL.L("loot.unassigned"), 65, 465, -42, function() activeFilter = "OPEN"; NGL.RefreshLootList() end)
+local assignedButton = NGL.CreateButton(lootPanel, NGL.L("loot.assigned"), 65, 535, -42, function() activeFilter = "WON"; NGL.RefreshLootList() end)
 
 local listScroll = CreateFrame("ScrollFrame", nil, lootPanel, "UIPanelScrollFrameTemplate")
 listScroll:SetPoint("TOPLEFT", 12, -78)
@@ -46,11 +46,11 @@ NGL.panels.lootDetails = detail
 detail.title = NGL.CreateLabel(detail, NGL.L("loot.select_detail"), 16, -8, "GameFontHighlightLarge")
 detail.uuid = NGL.CreateLabel(detail, "", 16, -38, "GameFontDisableSmall")
 detail.status = NGL.CreateLabel(detail, "", 16, -60)
-NGL.CreateLabel(detail, NGL.L("loot.player"), 16, -84, "GameFontHighlight")
-NGL.CreateLabel(detail, NGL.L("loot.server"), 140, -84, "GameFontHighlight")
-NGL.CreateLabel(detail, NGL.L("loot.class"), 220, -84, "GameFontHighlight")
-NGL.CreateLabel(detail, NGL.L("loot.type"), 340, -84, "GameFontHighlight")
-NGL.CreateLabel(detail, NGL.L("loot.points"), 420, -84, "GameFontHighlight")
+local playerLabel = NGL.CreateLabel(detail, NGL.L("loot.player"), 16, -84, "GameFontHighlight")
+local serverLabel = NGL.CreateLabel(detail, NGL.L("loot.server"), 140, -84, "GameFontHighlight")
+local classLabel = NGL.CreateLabel(detail, NGL.L("loot.class"), 220, -84, "GameFontHighlight")
+local typeLabel = NGL.CreateLabel(detail, NGL.L("loot.type"), 340, -84, "GameFontHighlight")
+local pointsLabel = NGL.CreateLabel(detail, NGL.L("loot.points"), 420, -84, "GameFontHighlight")
 
 local rollScroll = CreateFrame("ScrollFrame", nil, detail, "UIPanelScrollFrameTemplate")
 rollScroll:SetPoint("TOPLEFT", 0, -102)
@@ -122,12 +122,39 @@ rerollNeedButton:SetPoint("LEFT", rerollAllButton, "RIGHT", 4, 0)
 local rerollGreedButton = NGL.CreateButton(detail, NGL.L("loot.reroll_greed"), 75, 0, 0, function()
     if selectedUUID then NGL.RerollLoot(selectedUUID, "GREED") end
 end)
+
+function NGL.RefreshLootLocale()
+    titleLabel:SetText(NGL.L("loot.title"))
+    searchLabel:SetText(NGL.L("loot.search"))
+    allButton:SetText(NGL.L("loot.all"))
+    unassignedButton:SetText(NGL.L("loot.unassigned"))
+    assignedButton:SetText(NGL.L("loot.assigned"))
+    playerLabel:SetText(NGL.L("loot.player"))
+    serverLabel:SetText(NGL.L("loot.server"))
+    classLabel:SetText(NGL.L("loot.class"))
+    typeLabel:SetText(NGL.L("loot.type"))
+    pointsLabel:SetText(NGL.L("loot.points"))
+    UIDropDownMenu_SetText(assignPlayerMenu, assignPlayer or NGL.L("loot.choose_player"))
+    assignGreedButton:SetText(NGL.L("loot.assign_greed"))
+    reassignButton:SetText(NGL.L("loot.assign_need"))
+    rerollLabel:SetText(NGL.L("loot.reroll"))
+    rerollAllButton:SetText(NGL.L("loot.reroll_all"))
+    rerollNeedButton:SetText(NGL.L("loot.reroll_need"))
+    rerollGreedButton:SetText(NGL.L("loot.reroll_greed"))
+    StaticPopupDialogs["NGL_CONFIRM_DELETE_LOOT"].text = NGL.L("loot.delete_confirm")
+    StaticPopupDialogs["NGL_CONFIRM_DELETE_LOOT"].button1 = NGL.L("loot.delete")
+    StaticPopupDialogs["NGL_CONFIRM_DELETE_LOOT"].button2 = NGL.L("loot.cancel")
+    NGL.RefreshLootList()
+    if selectedUUID then
+        NGL.SetSelectedLoot(selectedUUID)
+    end
+end
 rerollGreedButton:ClearAllPoints()
 rerollGreedButton:SetPoint("LEFT", rerollNeedButton, "RIGHT", 4, 0)
 
 function NGL.ClearLootDetails()
     selectedUUID = nil
-    detail.title:SetText("選擇一件裝備查看明細")
+    detail.title:SetText(NGL.L("loot.select_detail"))
     detail.uuid:SetText("")
     detail.status:SetText("")
     if detail.rows then NGL.ClearRows(detail.rows) end

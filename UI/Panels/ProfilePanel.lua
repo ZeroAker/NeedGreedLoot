@@ -42,9 +42,9 @@ StaticPopupDialogs["NGL_CONFIRM_RESET_PROFILE"] = {
     preferredIndex = 3
 }
 
-NGL.CreateLabel(profilePanel, NGL.L("profile.manager"), 12, -10, "GameFontHighlightLarge")
+local titleLabel = NGL.CreateLabel(profilePanel, NGL.L("profile.manager"), 12, -10, "GameFontHighlightLarge")
 NGL.profileName = NGL.CreateEditBox(profilePanel, 220, 24, 24, -52, NGL_CurrentProfile)
-NGL.CreateLabel(profilePanel, NGL.L("profile.name"), 24, -42)
+local nameLabel = NGL.CreateLabel(profilePanel, NGL.L("profile.name"), 24, -42)
 
 local profileRows = {}
 local profileScroll = CreateFrame("ScrollFrame", nil, profilePanel, "UIPanelScrollFrameTemplate")
@@ -170,7 +170,7 @@ function NGL.RefreshProfiles()
     RefreshNeedStatus()
 end
 
-NGL.CreateButton(profilePanel, NGL.L("profile.create"), 70, 270, -52, function()
+local createButton = NGL.CreateButton(profilePanel, NGL.L("profile.create"), 70, 270, -52, function()
     local name = NGL.profileName:GetText()
     if name ~= "" and not NGL_Profiles[name] then
         NGL_Profiles[name] = { UsedNeedList = {}, HistoryList = {}, GreedCountList = {}, LootList = {} }
@@ -178,7 +178,7 @@ NGL.CreateButton(profilePanel, NGL.L("profile.create"), 70, 270, -52, function()
     end
 end)
 
-NGL.CreateButton(profilePanel, NGL.L("profile.copy_current"), 90, 345, -52, function()
+local copyButton = NGL.CreateButton(profilePanel, NGL.L("profile.copy_current"), 90, 345, -52, function()
     local name = NGL.profileName:GetText()
     local source = NGL.GetCurrentProfileData()
     if name ~= "" and not NGL_Profiles[name] then
@@ -189,17 +189,36 @@ NGL.CreateButton(profilePanel, NGL.L("profile.copy_current"), 90, 345, -52, func
     end
 end)
 
-NGL.CreateButton(profilePanel, NGL.L("profile.reset"), 70, 440, -52, function()
+local resetButton = NGL.CreateButton(profilePanel, NGL.L("profile.reset"), 70, 440, -52, function()
     StaticPopup_Show("NGL_CONFIRM_RESET_PROFILE")
 end)
 
-NGL.CreateButton(profilePanel, NGL.L("profile.delete"), 70, 515, -52, function()
+local deleteButton = NGL.CreateButton(profilePanel, NGL.L("profile.delete"), 70, 515, -52, function()
     local name = NGL.profileName:GetText()
     if name ~= "" and name ~= "default" and NGL_Profiles[name] then
         StaticPopup_Show("NGL_CONFIRM_DELETE_PROFILE", name, nil, name)
     end
 end)
 
-NGL.CreateLabel(profilePanel, "已建立的 Profile", 24, -92)
-NGL.CreateLabel(profilePanel, "需求使用狀態", 390, -92, "GameFontHighlight")
-NGL.CreateLabel(profilePanel, "團隊成員優先；灰階名稱表示目前不在團隊", 390, -108, "GameFontNormalSmall")
+local existingLabel = NGL.CreateLabel(profilePanel, NGL.L("profile.existing"), 24, -92)
+local needStatusLabel = NGL.CreateLabel(profilePanel, NGL.L("profile.need_status"), 390, -92, "GameFontHighlight")
+local teamNoteLabel = NGL.CreateLabel(profilePanel, NGL.L("profile.team_note"), 390, -108, "GameFontNormalSmall")
+
+function NGL.RefreshProfileLocale()
+    titleLabel:SetText(NGL.L("profile.manager"))
+    nameLabel:SetText(NGL.L("profile.name"))
+    createButton:SetText(NGL.L("profile.create"))
+    copyButton:SetText(NGL.L("profile.copy_current"))
+    resetButton:SetText(NGL.L("profile.reset"))
+    deleteButton:SetText(NGL.L("profile.delete"))
+    existingLabel:SetText(NGL.L("profile.existing"))
+    needStatusLabel:SetText(NGL.L("profile.need_status"))
+    teamNoteLabel:SetText(NGL.L("profile.team_note"))
+    StaticPopupDialogs["NGL_CONFIRM_DELETE_PROFILE"].text = NGL.L("profile.delete_confirm")
+    StaticPopupDialogs["NGL_CONFIRM_DELETE_PROFILE"].button1 = NGL.L("profile.delete")
+    StaticPopupDialogs["NGL_CONFIRM_DELETE_PROFILE"].button2 = NGL.L("loot.cancel")
+    StaticPopupDialogs["NGL_CONFIRM_RESET_PROFILE"].text = NGL.L("profile.reset_confirm")
+    StaticPopupDialogs["NGL_CONFIRM_RESET_PROFILE"].button1 = NGL.L("profile.reset")
+    StaticPopupDialogs["NGL_CONFIRM_RESET_PROFILE"].button2 = NGL.L("loot.cancel")
+    NGL.RefreshProfiles()
+end

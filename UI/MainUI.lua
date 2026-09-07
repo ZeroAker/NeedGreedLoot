@@ -38,6 +38,18 @@ function NGL.RefreshLocaleUI()
     if NGL.RefreshScannerControls then
         NGL.RefreshScannerControls()
     end
+    if NGL.RefreshScannerLocale then
+        NGL.RefreshScannerLocale()
+    end
+    if NGL.RefreshLootLocale then
+        NGL.RefreshLootLocale()
+    end
+    if NGL.RefreshProfileLocale then
+        NGL.RefreshProfileLocale()
+    end
+    if NGL.RefreshManualLocale then
+        NGL.RefreshManualLocale()
+    end
 end
 
 -- Utility creation functions

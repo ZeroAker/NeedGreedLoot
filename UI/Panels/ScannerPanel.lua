@@ -6,8 +6,8 @@ scannerPanel:SetPoint("BOTTOMRIGHT", -12, 12)
 NGL.panels[1] = scannerPanel
 NGL.scannerPanel = scannerPanel
 
-NGL.CreateLabel(scannerPanel, NGL.L("scanner.title"), 12, -10, "GameFontHighlightLarge")
-NGL.CreateLabel(scannerPanel, NGL.L("scanner.current_item"), 24, -42, "GameFontHighlight")
+local titleLabel = NGL.CreateLabel(scannerPanel, NGL.L("scanner.title"), 12, -10, "GameFontHighlightLarge")
+local currentItemLabel = NGL.CreateLabel(scannerPanel, NGL.L("scanner.current_item"), 24, -42, "GameFontHighlight")
 
 local qualityLabel = NGL.CreateLabel(scannerPanel, NGL.L("scanner.min_quality"), 175, -10)
 local qualityDropdown = CreateFrame("Frame", nil, scannerPanel, "UIDropDownMenuTemplate")
@@ -46,14 +46,14 @@ currentItemUUID:SetWordWrap(false)
 
 NGL.scannerDurationInput = NGL.CreateEditBox(scannerPanel, 70, 24, 540, -62, tostring(NGL_DefaultTimer))
 local durationInput = NGL.scannerDurationInput
-NGL.CreateLabel(scannerPanel, NGL.L("scanner.seconds"), 615, -68)
+local secondsLabel = NGL.CreateLabel(scannerPanel, NGL.L("scanner.seconds"), 615, -68)
 
 local scanDivider = scannerPanel:CreateTexture(nil, "ARTWORK")
 scanDivider:SetColorTexture(0.5, 0.5, 0.5, 0.8)
 scanDivider:SetPoint("TOPLEFT", 24, -122)
 scanDivider:SetSize(820, 1)
 
-NGL.CreateLabel(scannerPanel, NGL.L("scanner.bag_items"), 24, -142, "GameFontHighlight")
+local bagItemsLabel = NGL.CreateLabel(scannerPanel, NGL.L("scanner.bag_items"), 24, -142, "GameFontHighlight")
 
 local scanScroll = CreateFrame("ScrollFrame", nil, scannerPanel, "UIPanelScrollFrameTemplate")
 scanScroll:SetPoint("TOPLEFT", 24, -166)
@@ -64,6 +64,7 @@ scanList:SetSize(720, 1)
 scanScroll:SetScrollChild(scanList)
 
 local scanSlots = {}
+local scanHeaders = {}
 NGL.scannedItems = {}
 NGL.selectedScanItem = nil
 
@@ -133,7 +134,7 @@ local function TooltipContains(text, patterns)
     return false
 end
 
-local function GetScannerDebugState(bag, slot, itemLink)
+local function GetScannerDebugState(bag, slot, itemLink, quality, effectiveQuality)
     local tooltipText = ""
     if C_TooltipInfo and C_TooltipInfo.GetBagItem then
         local tooltipData = C_TooltipInfo.GetBagItem(bag, slot)
@@ -160,13 +161,13 @@ local function GetScannerDebugState(bag, slot, itemLink)
         "灵魂绑定"
     }) and TooltipContains(tooltipText, {
         "you may trade this item",
-        "trade",
         "交易此物品",
-        "交易",
     })
 
     return {
         itemLink = itemLink,
+        quality = quality or 0,
+        effectiveQuality = effectiveQuality or quality or 0,
         bag = bag,
         slot = slot,
         tooltipText = tooltipText,
@@ -231,6 +232,14 @@ local function IsTierToken(tooltipText)
     return hasSetCraftText and hasClassText
 end
 
+local function IsMythicDifficultyItem(tooltipText)
+    return TooltipContains(tooltipText, {
+        "傳奇難度",
+        "传奇难度",
+        "mythic",
+    })
+end
+
 local function GetBagTooltipText(bag, slot)
     local tooltipText = ""
     if C_TooltipInfo and C_TooltipInfo.GetBagItem then
@@ -261,9 +270,7 @@ local function GetTooltipBindingStatus(tooltipText)
         "灵魂绑定"
     }) and TooltipContains(tooltipText, {
         "you may trade this item",
-        "trade",
         "交易此物品",
-        "交易",
     })
 
     return tooltipText, bindsWhenEquipped, soulboundTradeWindow
@@ -302,8 +309,11 @@ local function GetScannerItem(bag, slot)
     itemLevel = itemLevel or 0
     itemSubType = itemSubType or instantSubType or ""
     equipLoc = equipLoc or instantEquipLoc or ""
-
     local tooltipText = GetBagTooltipText(bag, slot)
+    local effectiveQuality = quality
+    if quality < 4 and IsMythicDifficultyItem(tooltipText) then
+        effectiveQuality = 4
+    end
     local _, bindsWhenEquipped, soulboundTradeWindow = GetTooltipBindingStatus(tooltipText)
     local tradeSeconds = GetTradeSeconds(tooltipText)
     local isEquipSlotItem = IsAllowedEquipSlot(equipLoc)
@@ -316,8 +326,9 @@ local function GetScannerItem(bag, slot)
     if NGL_DebugMode then
         return {
             bag = bag, slot = slot, itemLink = itemLink, itemID = itemID,
-            itemName = itemName or itemLink, quality = quality, itemLevel = itemLevel,
+            itemName = itemName or itemLink, quality = quality, effectiveQuality = effectiveQuality, itemLevel = itemLevel,
             itemSubType = itemSubType, equipLoc = equipLoc, icon = icon,
+            isTierToken = isTierToken,
             bindsWhenEquipped = bindsWhenEquipped,
             soulboundTradeWindow = soulboundTradeWindow,
             tradeSeconds = tradeSeconds
@@ -328,8 +339,9 @@ local function GetScannerItem(bag, slot)
 
     return {
         bag = bag, slot = slot, itemLink = itemLink, itemID = itemID,
-        itemName = itemName or itemLink, quality = quality, itemLevel = itemLevel,
+        itemName = itemName or itemLink, quality = quality, effectiveQuality = effectiveQuality, itemLevel = itemLevel,
         itemSubType = itemSubType, equipLoc = equipLoc, icon = icon,
+        isTierToken = isTierToken,
         bindsWhenEquipped = bindsWhenEquipped,
         soulboundTradeWindow = soulboundTradeWindow,
         tradeSeconds = tradeSeconds
@@ -339,17 +351,48 @@ end
 local function IsScannableItem(bag, slot)
     local item = GetScannerItem(bag, slot)
     local settings = NGL.GetScannerSettings()
-    if not item or item.quality < settings.minQuality then return nil end
+    if not item or item.effectiveQuality < settings.minQuality then return nil end
+    if settings.categoryMode == "TRADE_TIME" and not item.soulboundTradeWindow then return nil end
     if item.bindsWhenEquipped and not settings.showBindOnEquip then return nil end
     return item
+end
+
+local function GetTypeCategory(item)
+    if item.isTierToken then
+        return "TIER_TOKEN", NGL.L("scanner.category.tier_token")
+    end
+
+    local categoryKey = item.equipLoc
+    local categoryName = categoryKey and _G[categoryKey]
+    if categoryKey and categoryKey ~= "" and categoryKey ~= "INVTYPE_NON_EQUIP" and categoryName then
+        if categoryKey == "INVTYPE_WEAPONMAINHAND"
+            or categoryKey == "INVTYPE_WEAPONOFFHAND"
+            or categoryKey == "INVTYPE_SHIELD"
+            or categoryKey == "INVTYPE_2HWEAPON"
+            or categoryKey == "INVTYPE_WEAPON"
+            or categoryKey == "INVTYPE_HOLDABLE"
+            or categoryKey == "INVTYPE_RANGED"
+            or categoryKey == "INVTYPE_RANGEDRIGHT"
+            or categoryKey == "INVTYPE_THROWN" then
+            return "WEAPON", NGL.L("scanner.category.weapon")
+        end
+        return categoryKey, categoryName
+    end
+
+    categoryKey = item.itemSubType
+    if categoryKey and categoryKey ~= "" then
+        return categoryKey, categoryKey
+    end
+
+    return "UNKNOWN", NGL.L("common.unknown")
 end
 
 local function SortScannedItems(items)
     local mode = NGL.GetScannerSettings().categoryMode
     table.sort(items, function(left, right)
         if mode == "TYPE" then
-            local leftType = left.itemSubType ~= "" and left.itemSubType or left.equipLoc
-            local rightType = right.itemSubType ~= "" and right.itemSubType or right.equipLoc
+            local leftType = GetTypeCategory(left)
+            local rightType = GetTypeCategory(right)
             if leftType ~= rightType then return leftType < rightType end
         elseif mode == "TRADE_TIME" then
             local leftTime = left.tradeSeconds or math.huge
@@ -364,6 +407,7 @@ end
 function NGL.RefreshScanner()
     RefreshScannerControls()
     for _, slotButton in ipairs(scanSlots) do slotButton:Hide() end
+    for _, header in ipairs(scanHeaders) do header:Hide() end
     NGL.scannedItems = {}
     NGL.selectedScanItem = nil
     GameTooltip:Hide()
@@ -385,8 +429,45 @@ function NGL.RefreshScanner()
         end
     end
     SortScannedItems(NGL.scannedItems)
-    for index, scanItem in ipairs(NGL.scannedItems) do
-                local slotButton = scanSlots[index]
+    local categoryMode = NGL.GetScannerSettings().categoryMode
+    local itemIndex = 0
+    local layoutY = 0
+    local layoutColumn = 0
+    local categoryItemIndex = 0
+    local itemStartY = 0
+    local headerIndex = 0
+    local previousCategoryKey
+    for _, scanItem in ipairs(NGL.scannedItems) do
+                if categoryMode == "TYPE" then
+                    local categoryKey, categoryName = GetTypeCategory(scanItem)
+                    if categoryKey ~= previousCategoryKey then
+                        if previousCategoryKey and layoutColumn > 0 then
+                            layoutY = layoutY + 64
+                        end
+                        headerIndex = headerIndex + 1
+                        local header = scanHeaders[headerIndex]
+                        if not header then
+                            header = scanList:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+                            scanHeaders[headerIndex] = header
+                        end
+                        header:ClearAllPoints()
+                        header:SetPoint("TOPLEFT", 0, -layoutY)
+                        header:SetHeight(24)
+                        header:SetText(categoryName)
+                        header:Show()
+                        layoutY = layoutY + 24
+                        itemStartY = layoutY
+                        layoutColumn = 0
+                        categoryItemIndex = 0
+                        previousCategoryKey = categoryKey
+                    end
+                end
+
+                itemIndex = itemIndex + 1
+                if categoryMode == "TYPE" then
+                    categoryItemIndex = categoryItemIndex + 1
+                end
+                local slotButton = scanSlots[itemIndex]
                 if not slotButton then
                     slotButton = CreateFrame("Button", nil, scanList)
                     slotButton:SetSize(58, 58)
@@ -409,22 +490,38 @@ function NGL.RefreshScanner()
                     slotButton.selectedBorder:Hide()
                     slotButton.count = slotButton:CreateFontString(nil, "OVERLAY", "NumberFontNormal")
                     slotButton.count:SetPoint("BOTTOMRIGHT", -3, 3)
-                    scanSlots[index] = slotButton
+                    scanSlots[itemIndex] = slotButton
                 end
-                local column = (index - 1) % 10
-                local row = math.floor((index - 1) / 10)
+                local column
+                local itemY
+                if categoryMode == "TYPE" then
+                    column = layoutColumn
+                    itemY = itemStartY
+                    itemY = itemY + math.floor((categoryItemIndex - 1) / 10) * 64
+                    layoutColumn = layoutColumn + 1
+                    if layoutColumn == 10 then
+                        layoutColumn = 0
+                        layoutY = layoutY + 64
+                        itemStartY = layoutY
+                    end
+                else
+                    column = (itemIndex - 1) % 10
+                    itemY = math.floor((itemIndex - 1) / 10) * 64
+                end
                 local itemInfo = C_Container.GetContainerItemInfo(scanItem.bag, scanItem.slot)
-                slotButton:SetPoint("TOPLEFT", column * 64, -row * 64)
+                slotButton:SetPoint("TOPLEFT", column * 64, -itemY)
                 slotButton.icon:SetTexture(itemInfo and itemInfo.iconFileID or 134400)
                 slotButton.count:SetText(itemInfo and itemInfo.stackCount and itemInfo.stackCount > 1 and itemInfo.stackCount or "")
                 slotButton:SetScript("OnClick", function()
                     NGL.selectedScanItem = scanItem
 
-                    local debugState = GetScannerDebugState(scanItem.bag, scanItem.slot, scanItem.itemLink)
+                    local debugState = GetScannerDebugState(scanItem.bag, scanItem.slot, scanItem.itemLink, scanItem.quality, scanItem.effectiveQuality)
                     if NGL.DebugPrint then
                         NGL.DebugPrint(string.format(
-                            "Clicked scan item: %s | bag=%d slot=%d | bindsWhenEquipped=%s | soulboundTradeWindow=%s | tooltip=%s",
+                            "Clicked scan item: %s | quality=%d effectiveQuality=%d | bag=%d slot=%d | bindsWhenEquipped=%s | soulboundTradeWindow=%s | tooltip=%s",
                             tostring(debugState.itemLink),
+                            debugState.quality,
+                            debugState.effectiveQuality,
                             debugState.bag,
                             debugState.slot,
                             tostring(debugState.bindsWhenEquipped),
@@ -449,23 +546,24 @@ function NGL.RefreshScanner()
                 slotButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
                 slotButton:Show()
             end
-    scanList:SetHeight(math.max(1, math.ceil(index / 10) * 64))
+    local listHeight = categoryMode == "TYPE" and layoutY + (layoutColumn > 0 and 64 or 0) or math.ceil(itemIndex / 10) * 64
+    scanList:SetHeight(math.max(1, listHeight))
 end
 
-NGL.CreateButton(scannerPanel, NGL.L("scanner.scan_bag"), 90, 24, -112, NGL.RefreshScanner)
-NGL.CreateButton(scannerPanel, NGL.L("scanner.need_priority"), 90, 175, -112, function()
+local scanBagButton = NGL.CreateButton(scannerPanel, NGL.L("scanner.scan_bag"), 90, 24, -112, NGL.RefreshScanner)
+local needPriorityButton = NGL.CreateButton(scannerPanel, NGL.L("scanner.need_priority"), 90, 175, -112, function()
     if NGL.selectedScanItem then StartNGLRoll(NGL.selectedScanItem.itemLink, durationInput:GetText(), "ALL") end
 end)
-NGL.CreateButton(scannerPanel, NGL.L("scanner.need_roll"), 90, 270, -112, function()
+local needRollButton = NGL.CreateButton(scannerPanel, NGL.L("scanner.need_roll"), 90, 270, -112, function()
     if NGL.selectedScanItem then StartNGLRoll(NGL.selectedScanItem.itemLink, durationInput:GetText(), "NEED") end
 end)
-NGL.CreateButton(scannerPanel, NGL.L("scanner.greed_roll"), 90, 365, -112, function()
+local greedRollButton = NGL.CreateButton(scannerPanel, NGL.L("scanner.greed_roll"), 90, 365, -112, function()
     if NGL.selectedScanItem then StartNGLRoll(NGL.selectedScanItem.itemLink, durationInput:GetText(), "GREED") end
 end)
-NGL.CreateButton(scannerPanel, NGL.L("scanner.end_early"), 90, 460, -112, function()
+local endEarlyButton = NGL.CreateButton(scannerPanel, NGL.L("scanner.end_early"), 90, 460, -112, function()
     SlashCmdList["NGL"]("stop")
 end)
-NGL.CreateButton(scannerPanel, NGL.L("scanner.abort"), 90, 555, -112, function()
+local abortButton = NGL.CreateButton(scannerPanel, NGL.L("scanner.abort"), 90, 555, -112, function()
     SlashCmdList["NGL"]("abort")
 end)
 
@@ -476,3 +574,17 @@ scannerPanel:SetScript("OnShow", function()
     RefreshScannerControls()
     NGL.RefreshScanner()
 end)
+
+function NGL.RefreshScannerLocale()
+    titleLabel:SetText(NGL.L("scanner.title"))
+    currentItemLabel:SetText(NGL.L("scanner.current_item"))
+    secondsLabel:SetText(NGL.L("scanner.seconds"))
+    bagItemsLabel:SetText(NGL.L("scanner.bag_items"))
+    scanBagButton:SetText(NGL.L("scanner.scan_bag"))
+    needPriorityButton:SetText(NGL.L("scanner.need_priority"))
+    needRollButton:SetText(NGL.L("scanner.need_roll"))
+    greedRollButton:SetText(NGL.L("scanner.greed_roll"))
+    endEarlyButton:SetText(NGL.L("scanner.end_early"))
+    abortButton:SetText(NGL.L("scanner.abort"))
+    currentItemName:SetText(NGL.selectedScanItem and NGL.selectedScanItem.itemLink or NGL.L("scanner.no_item_selected"))
+end

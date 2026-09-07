@@ -43,8 +43,8 @@ end)
 
 local function RefreshLocaleDropdown()
     local options = {
-        { text = "English", value = "enUS" },
-        { text = "繁體中文", value = "zhTW" },
+        { text = NGL.L("settings.language.english"), value = "enUS" },
+        { text = NGL.L("settings.language.traditional_chinese"), value = "zhTW" },
     }
 
     local function InitDropdown(_, level)

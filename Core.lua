@@ -373,7 +373,7 @@ frame:RegisterEvent("ADDON_LOADED")
 frame:SetScript("OnEvent", function(self, event, arg1, msg)
     if event == "ADDON_LOADED" and arg1 == "NeedGreedLoot" then
         NGL_Profiles[NGL_CurrentProfile] = NGL.GetCurrentProfileData()
-        NGL.DebugPrint("NeedGreedLoot  載入完成，目前 Profile: " .. NGL_CurrentProfile)
+        NGL.DebugPrint(NGL.L("core.debug.loaded", { profile = NGL_CurrentProfile }))
     elseif event == "CHAT_MSG_SYSTEM" then
         msg = arg1
         if not NGL.isRolling then return end
@@ -423,21 +423,21 @@ frame:SetScript("OnEvent", function(self, event, arg1, msg)
             local cleanName = string.match(name, "([^-]+)") or name
 
             if not lowerBound or not upperBound then
-                NGL.DebugPrint("忽略缺少範圍的 roll -> 玩家: [" .. cleanName .. "] Roll: [" .. tostring(roll) .. "]")
+                NGL.DebugPrint(NGL.L("core.debug.missing_range", { name = cleanName, roll = roll }))
                 return
             end
 
             if not NGL.IsValidRollRange(lowerBound, upperBound) then
-                NGL.DebugPrint("忽略非 1-100 範圍 roll -> 玩家: [" .. cleanName .. "] Roll: [" .. tostring(roll) .. "] 範圍: [" .. tostring(lowerBound) .. "-" .. tostring(upperBound) .. "]")
+                NGL.DebugPrint(NGL.L("core.debug.invalid_range", { name = cleanName, roll = roll, lower = lowerBound, upper = upperBound }))
                 return
             end
 
             if not NGL.IsValidRollValue(roll) then
-                NGL.DebugPrint("忽略無效 roll -> 玩家: [" .. cleanName .. "] Roll: [" .. tostring(roll) .. "] (限定 1-100)")
+                NGL.DebugPrint(NGL.L("core.debug.invalid_value", { name = cleanName, roll = roll }))
                 return
             end
 
-            NGL.DebugPrint("解析成功 -> 玩家: [" .. cleanName .. "] Roll: [" .. roll .. "] 範圍: [" .. lowerBound .. "-" .. upperBound .. "]")
+            NGL.DebugPrint(NGL.L("core.debug.parsed", { name = cleanName, roll = roll, lower = lowerBound, upper = upperBound }))
 
             if not NGL.rolls[cleanName] then
                 local recorded = false
@@ -490,7 +490,7 @@ frame:SetScript("OnEvent", function(self, event, arg1, msg)
                     })
                 end
             else
-                NGL.DebugPrint(cleanName .. " 已經擲骰過，忽略第二次點數。")
+                NGL.DebugPrint(NGL.L("core.debug.duplicate_roll", { name = cleanName }))
             end
         end
     end
@@ -606,12 +606,12 @@ local function HandleNGLSlash(msg, mode)
                 timer = timer
             }
 
-            local warnMsg = "|cffff0000[NGL 警告]|r " .. NGL.L("profile.delete_confirm", { name = subRest })
+            local warnMsg = "|cffff0000[NGL " .. NGL.L("common.warning") .. "]|r " .. NGL.L("profile.delete_confirm", { name = subRest })
             if subRest == NGL_CurrentProfile then
-                warnMsg = warnMsg .. " (包含當前正在使用的紀錄！刪除後將自動切換回 default)"
+                warnMsg = warnMsg .. NGL.L("core.profile.delete_current_warning")
             end
             print(warnMsg)
-            print("👉" .. NGL.L("core.command.profile_delete_prompt"))
+            print(NGL.L("core.command.profile_delete_prompt"))
 
         else
             if not NGL_Profiles[rest] then
@@ -672,19 +672,19 @@ local function HandleNGLSlash(msg, mode)
 
         for name, _ in pairs(allPlayers) do
             count = count + 1
-            local needStatus = profData.UsedNeedList[name] and "|cffff0000[已消耗需求]|r" or "|cff00ff00[尚有需求]|r"
+            local needStatus = profData.UsedNeedList[name] and NGL.L("core.list.used_need") or NGL.L("core.list.available_need")
             local greedWins = profData.GreedCountList[name] or 0
             
-            print("Player: |cffffd100" .. name .. "|r " .. needStatus .. " | 貪婪獲勝: |cffff9900" .. greedWins .. "|r 次")
+            print(NGL.L("core.list.player_status", { name = name, status = needStatus, greedWins = greedWins }))
 
             local history = profData.HistoryList[name]
             if history and #history > 0 then
                 for _, record in ipairs(history) do
-                    local typeStr = record.isNeed and "|cff00ff00【需求】|r" or "|cffff9900【貪婪】|r"
-                    print("   - " .. record.item .. " (" .. record.roll .. " 點 " .. typeStr .. ")")
+                    local typeStr = record.isNeed and "|cff00ff00【" .. NGL.L("loot.need") .. "】|r" or "|cffff9900【" .. NGL.L("loot.greed") .. "】|r"
+                    print(NGL.L("core.list.record", { item = record.item, roll = record.roll, type = typeStr }))
                 end
             else
-                print("   - (無裝備獲獎紀錄)")
+                print(NGL.L("core.list.no_history"))
             end
         end
 

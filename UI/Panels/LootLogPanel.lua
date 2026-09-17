@@ -209,7 +209,21 @@ function NGL.SetSelectedLoot(uuid)
 
     detail.title:SetText(loot.itemLink or "")
     detail.uuid:SetText(NGL.L("loot.uuid", { uuid = loot.uuid or "" }))
-    detail.status:SetText(loot.winnerName and NGL.L("loot.status_winner", { player = loot.winnerName, type = tostring(loot.consumableType or "") }) or NGL.L("loot.status_unassigned"))
+    if loot.winnerName then
+        local winnerColor = { r = 1, g = 1, b = 1 }
+        for _, roll in ipairs(loot.rolls or {}) do
+            if roll.playerName == loot.winnerName then
+                winnerColor = roll.classColor or winnerColor
+                break
+            end
+        end
+        local winnerType = loot.consumableType == "Need" and NGL.L("loot.need") or NGL.L("loot.greed")
+        local coloredWinner = string.format("|cff%02x%02x%02x%s|r", math.floor(winnerColor.r * 255 + 0.5), math.floor(winnerColor.g * 255 + 0.5), math.floor(winnerColor.b * 255 + 0.5), loot.winnerName)
+        local coloredType = "|cffffd100" .. winnerType .. "|r"
+        detail.status:SetText(NGL.L("loot.status_winner", { player = coloredWinner, type = coloredType }))
+    else
+        detail.status:SetText(NGL.L("loot.status_unassigned"))
+    end
     if assignPlayerMenu then assignPlayerMenu:Show() end
     if assignGreedButton then assignGreedButton:Show() end
     if reassignButton then reassignButton:Show() end
@@ -308,6 +322,12 @@ function NGL.RefreshLootList()
                 row.icon:SetPoint("TOPLEFT", 4, -4)
                 row.name = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
                 row.name:SetPoint("TOPLEFT", 40, -4)
+                row.name:SetWidth(165)
+                row.name:SetJustifyH("LEFT")
+                row.winner = row:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+                row.winner:SetPoint("TOPRIGHT", -4, -4)
+                row.winner:SetWidth(125)
+                row.winner:SetJustifyH("RIGHT")
                 row.uuid = row:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
                 row.uuid:SetPoint("TOPLEFT", 40, -20)
                 row.deleteButton = CreateFrame("Button", nil, row)
@@ -327,6 +347,22 @@ function NGL.RefreshLootList()
             row:SetPoint("TOPLEFT", 0, -(index - 1) * 42)
             row.icon:SetTexture(loot.icon or 134400)
             row.name:SetText(loot.itemLink or NGL.L("common.unknown"))
+            local winnerColor = { r = 1, g = 1, b = 1 }
+            if loot.winnerName then
+                for _, roll in ipairs(loot.rolls or {}) do
+                    if roll.playerName == loot.winnerName then
+                        winnerColor = roll.classColor or winnerColor
+                        break
+                    end
+                end
+                local winnerType = loot.consumableType == "Need" and NGL.L("loot.need") or NGL.L("loot.greed")
+                local coloredWinner = string.format("|cff%02x%02x%02x%s|r", math.floor(winnerColor.r * 255 + 0.5), math.floor(winnerColor.g * 255 + 0.5), math.floor(winnerColor.b * 255 + 0.5), loot.winnerName)
+                row.winner:SetText(coloredWinner .. "(|cffffd100" .. winnerType .. "|r)")
+                row.winner:Show()
+            else
+                row.winner:SetText("")
+                row.winner:Hide()
+            end
             row.uuid:SetText((loot.uuid or "") .. (loot.winnerName and "  [" .. NGL.L("loot.assigned") .. "]" or "  [" .. NGL.L("loot.unassigned") .. "]"))
             row:SetScript("OnClick", function() NGL.SetSelectedLoot(uuid) end)
             row.deleteButton:SetScript("OnClick", function() StaticPopup_Show("NGL_CONFIRM_DELETE_LOOT", nil, nil, uuid) end)

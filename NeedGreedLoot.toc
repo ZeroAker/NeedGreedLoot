@@ -2,7 +2,7 @@
 ## Title: NeedGreedLoot
 ## Notes: Need/Greed Loot Distribution Addon
 ## Author: 4nzon
-## Version: 2.7
+## Version: 2.8
 ## SavedVariables: NGL_Profiles, NGL_CurrentProfile, NGL_DebugMode, NGL_DefaultTimer, NGL_MinimapAngle, NGL_Locale, NGL_ScannerSettings
 
 Locale\Locale.lua

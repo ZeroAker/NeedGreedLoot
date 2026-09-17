@@ -42,6 +42,82 @@ StaticPopupDialogs["NGL_CONFIRM_RESET_PROFILE"] = {
     preferredIndex = 3
 }
 
+local function TrimProfileName(name)
+    return string.match(name or "", "^%s*(.-)%s*$") or ""
+end
+
+local function UpdateRenameWarning(dialog)
+    local oldName = dialog.data
+    local editBox = dialog:GetEditBox()
+    local newName = TrimProfileName(editBox:GetText())
+    local duplicate = newName ~= "" and newName ~= oldName and NGL_Profiles[newName] ~= nil
+    dialog.renameWarning:SetShown(duplicate)
+    dialog.renameWarning:SetText(duplicate and NGL.L("profile.rename_duplicate") or "")
+    dialog:GetButton1():SetEnabled(newName ~= "" and not duplicate)
+end
+
+StaticPopupDialogs["NGL_RENAME_PROFILE"] = {
+    text = NGL.L("profile.rename_title"),
+    button1 = NGL.L("common.ok"),
+    button2 = NGL.L("loot.cancel"),
+    hasEditBox = true,
+    maxLetters = 64,
+    OnShow = function(dialog, oldName)
+        local editBox = dialog:GetEditBox()
+        dialog.data = oldName
+        editBox:SetText(oldName or "")
+        editBox:HighlightText()
+        if not dialog.renameWarning then
+            dialog.renameWarning = dialog:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+            dialog.renameWarning:SetPoint("TOPLEFT", editBox, "BOTTOMLEFT", 0, -4)
+            dialog.renameWarning:SetWidth(280)
+            dialog.renameWarning:SetHeight(18)
+            dialog.renameWarning:SetJustifyH("LEFT")
+            dialog.renameWarning:SetTextColor(1, 0.2, 0.2)
+        end
+        editBox:SetScript("OnTextChanged", function()
+            UpdateRenameWarning(dialog)
+        end)
+        editBox:SetScript("OnEnterPressed", function()
+            if dialog:GetButton1():IsEnabled() then dialog:GetButton1():Click() end
+        end)
+        editBox:SetScript("OnEscapePressed", function()
+            dialog:Hide()
+        end)
+        UpdateRenameWarning(dialog)
+        C_Timer.After(0, function()
+            if dialog:IsShown() and dialog.which == "NGL_RENAME_PROFILE" then
+                dialog:SetHeight(dialog:GetHeight() + 18)
+                local button1 = dialog:GetButton1()
+                local button2 = dialog:GetButton2()
+                button1:ClearAllPoints()
+                button1:SetPoint("BOTTOM", dialog, "BOTTOM", -55, 22)
+                button2:SetPoint("BOTTOM", dialog, "BOTTOM", 55, 22)
+            end
+        end)
+    end,
+    OnAccept = function(dialog, oldName)
+        local newName = TrimProfileName(dialog:GetEditBox():GetText())
+        if newName == "" or (newName ~= oldName and NGL_Profiles[newName]) then return end
+        if newName ~= oldName then
+            NGL_Profiles[newName] = NGL_Profiles[oldName]
+            NGL_Profiles[oldName] = nil
+            NGL_CurrentProfile = newName
+            NGL.profileName:SetText(newName)
+            NGL.RefreshProfiles()
+        end
+    end,
+    OnHide = function(dialog)
+        if dialog.renameWarning then
+            dialog.renameWarning:Hide()
+        end
+    end,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3
+}
+
 local titleLabel = NGL.CreateLabel(profilePanel, NGL.L("profile.manager"), 12, -10, "GameFontHighlightLarge")
 NGL.profileName = NGL.CreateEditBox(profilePanel, 220, 24, 24, -52, NGL_CurrentProfile)
 local nameLabel = NGL.CreateLabel(profilePanel, NGL.L("profile.name"), 24, -42)
@@ -189,13 +265,21 @@ local copyButton = NGL.CreateButton(profilePanel, NGL.L("profile.copy_current"),
     end
 end)
 
-local resetButton = NGL.CreateButton(profilePanel, NGL.L("profile.reset"), 70, 440, -52, function()
+local renameButton = NGL.CreateButton(profilePanel, NGL.L("profile.rename"), 90, 440, -52, function()
+    local name = NGL.profileName:GetText()
+    if name ~= "" and NGL_Profiles[name] then
+        StaticPopup_Show("NGL_RENAME_PROFILE", nil, nil, name)
+    end
+end)
+
+local resetButton = NGL.CreateButton(profilePanel, NGL.L("profile.reset"), 70, 535, -52, function()
     StaticPopup_Show("NGL_CONFIRM_RESET_PROFILE")
 end)
 
-local deleteButton = NGL.CreateButton(profilePanel, NGL.L("profile.delete"), 70, 515, -52, function()
+local deleteButton = NGL.CreateButton(profilePanel, NGL.L("profile.delete"), 70, 610, -52, function()
     local name = NGL.profileName:GetText()
     if name ~= "" and name ~= "default" and NGL_Profiles[name] then
+        StaticPopupDialogs["NGL_CONFIRM_DELETE_PROFILE"].text = NGL.L("profile.delete_confirm", { name = name })
         StaticPopup_Show("NGL_CONFIRM_DELETE_PROFILE", name, nil, name)
     end
 end)
@@ -209,6 +293,7 @@ function NGL.RefreshProfileLocale()
     nameLabel:SetText(NGL.L("profile.name"))
     createButton:SetText(NGL.L("profile.create"))
     copyButton:SetText(NGL.L("profile.copy_current"))
+    renameButton:SetText(NGL.L("profile.rename"))
     resetButton:SetText(NGL.L("profile.reset"))
     deleteButton:SetText(NGL.L("profile.delete"))
     existingLabel:SetText(NGL.L("profile.existing"))
@@ -220,5 +305,8 @@ function NGL.RefreshProfileLocale()
     StaticPopupDialogs["NGL_CONFIRM_RESET_PROFILE"].text = NGL.L("profile.reset_confirm")
     StaticPopupDialogs["NGL_CONFIRM_RESET_PROFILE"].button1 = NGL.L("profile.reset")
     StaticPopupDialogs["NGL_CONFIRM_RESET_PROFILE"].button2 = NGL.L("loot.cancel")
+    StaticPopupDialogs["NGL_RENAME_PROFILE"].text = NGL.L("profile.rename_title")
+    StaticPopupDialogs["NGL_RENAME_PROFILE"].button1 = NGL.L("common.ok")
+    StaticPopupDialogs["NGL_RENAME_PROFILE"].button2 = NGL.L("loot.cancel")
     NGL.RefreshProfiles()
 end

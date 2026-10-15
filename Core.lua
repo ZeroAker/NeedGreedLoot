@@ -122,7 +122,7 @@ end
 
 function NGL.GetItemSnapshot(itemLink)
     local itemID = tonumber(string.match(itemLink or "", "|Hitem:(%d+)"))
-    local icon = itemID and select(5, GetItemInfoInstant(itemID))
+    local icon = itemID and select(5, C_Item.GetItemInfoInstant(itemID))
     local loot = {
         itemLink = itemLink,
         itemID = itemID,

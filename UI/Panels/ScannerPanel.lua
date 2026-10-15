@@ -304,7 +304,7 @@ local function GetScannerItem(bag, slot)
     if not itemID then return nil end
 
     local itemName, _, quality, itemLevel, _, _, itemSubType, _, equipLoc = C_Item.GetItemInfo(itemID)
-    local _, _, instantSubType, instantEquipLoc, icon = GetItemInfoInstant(itemID)
+    local _, _, instantSubType, instantEquipLoc, icon = C_Item.GetItemInfoInstant(itemID)
     quality = quality or 0
     itemLevel = itemLevel or 0
     itemSubType = itemSubType or instantSubType or ""

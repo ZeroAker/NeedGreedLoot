@@ -29,6 +29,7 @@ function NGL.RefreshLocaleUI()
         elseif index == 5 then key = "ui.tabs.manual" end
         if key and tab then
             tab:SetText(NGL.L(key))
+            tab:SetWidth(math.max(60, tab:GetFontString():GetStringWidth() + 20))
         end
     end
 
@@ -86,20 +87,11 @@ function NGL.ClearRows(rows)
 end
 
 local function CreateTab(name, text, x)
-    local tab = CreateFrame("Button", name, ui, "OptionsFrameTabButtonTemplate")
+    local tab = CreateFrame("Button", name, ui, "UIPanelButtonTemplate")
+    tab:SetHeight(24)
     tab:SetID(#NGL.tabs + 1)
     tab:SetText(text)
-    
-    local textFS = tab:GetFontString()
-    if textFS then
-        textFS:ClearAllPoints()
-        textFS:SetPoint("CENTER", tab, "CENTER", 5, -3)
-    end
-    local highlight = tab:GetHighlightTexture()
-    if highlight then
-        highlight:ClearAllPoints()
-        highlight:SetPoint("CENTER", tab, "CENTER", 5, -3)
-    end
+    tab:SetWidth(math.max(60, tab:GetFontString():GetStringWidth() + 20))
     
     tab:SetPoint("TOPLEFT", x, -28)
     NGL.tabs[#NGL.tabs + 1] = tab

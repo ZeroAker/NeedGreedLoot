@@ -1,8 +1,8 @@
-## Interface: 120100, 120007, 50504, 38001, 20506, 11509
+## Interface: 120100, 120105, 16001, 50504, 38001, 20506, 11509
 ## Title: NeedGreedLoot
 ## Notes: Need/Greed Loot Distribution Addon
 ## Author: 4nzon
-## Version: 2.8
+## Version: 2.9
 ## SavedVariables: NGL_Profiles, NGL_CurrentProfile, NGL_DebugMode, NGL_DefaultTimer, NGL_MinimapAngle, NGL_Locale, NGL_ScannerSettings
 
 Locale\Locale.lua

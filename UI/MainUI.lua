@@ -87,6 +87,7 @@ end
 
 local function CreateTab(name, text, x)
     local tab = CreateFrame("Button", name, ui, "OptionsFrameTabButtonTemplate")
+    tab.Text = tab:GetFontString()
     tab:SetID(#NGL.tabs + 1)
     tab:SetText(text)
     

@@ -46,7 +46,7 @@ local saveButton = NGL.CreateButton(manualPanel, NGL.L("manual.save_record"), 12
         if itemLink == "" then return end
         local itemID = tonumber(string.match(itemLink, "|Hitem:(%d+)"))
         local uuid = string.format("%d-%s-%04x", time(), itemID or "unknown", math.random(0, 65535))
-        loot = { itemLink = itemLink, itemID = itemID, icon = itemID and select(5, GetItemInfoInstant(itemID)), uuid = uuid, rolls = {} }
+        loot = { itemLink = itemLink, itemID = itemID, icon = itemID and select(5, C_Item.GetItemInfoInstant(itemID)), uuid = uuid, rolls = {} }
         profile.LootList[uuid] = loot
         NGL.selectedUUID = uuid
     end
